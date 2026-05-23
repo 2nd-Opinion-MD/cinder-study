@@ -4,14 +4,25 @@ project: CINDER (Co-occurrence INference for Disease Escalation in Rheumatology)
 owner: Dylan McCapes
 companion_to: PROTOCOL_DRAFT_v3.md (§13 pre-delivery checklist)
 status: PLAN — phased work breakdown for the cinder-study repository
-date: 2026-05-07
+date: 2026-05-23 (revised — adds 5/26 FORWARD/UNMC call, calendar slip acknowledged)
 gating_deadlines:
-  - "Dylan §13 confirmations + deliverables back to Andras: 2026-05-15 (target)"
-  - "v3.0-FINAL tagged + committed: 2026-05-20 (gate)"
+  - "Dylan §13 confirmations + deliverables back to Andras: 2026-05-15 (TARGET — slipped, replaced by 5/26 call deliverables)"
+  - "v3.0-FINAL tagged + committed: 2026-05-20 (GATE — slipped, in flight)"
+  - "FORWARD/UNMC working call (Kaleb / Adam Cornish / Rebecca Schumacher): 2026-05-26 1 PM CDT"
   - "Kaleb preliminary delivery: 2026-05-31 (Andras-led)"
   - "ACR Convergence abstract submission: 2026-06-09 (needs frozen commit hash)"
   - "SBIR Phase I to NIAMS: 2026-09-05 (joint, non-extendable)"
+stakeholders:
+  - "Andras Hangyal, PharmD — 2OPMD, PI"
+  - "Dylan McCapes — 2OPMD, informatics architecture (this repo's primary owner)"
+  - "Kaleb Michaud, PhD — FORWARD Co-Director, UNMC; senior author"
+  - "Adam Cornish — UNMC, head of IT; data delivery technical owner (new 2026-05-23)"
+  - "Rebecca Schumacher — FORWARD, executive director (new 2026-05-23)"
 ip_posture: §10 — EoH modules M2 / M3 / M6 / M9 / M62 / M63 are 2OPMD proprietary and live in a private package; this repository holds open inputs, outputs, statistical methods, comparator implementations, and derivation-chain schemas. Replicability commitment is methodological + governance-chain transparency, not source-level module disclosure.
+terminology_map:
+  - "Andras 'F2 regression harness' = IMPLEMENTATION_PLAN Phase 4 (reference implementations) + Phase 4.H (test harness)"
+  - "Andras 'F4-CASE-01 / F4-CASE-04' = case-instantiations on the 632-event noarcs PTV under Phase 4.D (per-patient detection orchestration)"
+  - "Andras 'noarcs synthetic exemplar regen' = Phase 4 fixture refresh on `ptv.2.1-indexed-v1-noarcs` schema"
 ---
 
 # CINDER Implementation Plan
@@ -19,6 +30,8 @@ ip_posture: §10 — EoH modules M2 / M3 / M6 / M9 / M62 / M63 are 2OPMD proprie
 This is the phased work breakdown for everything Dylan owns in the `cinder-study` repository between handoff (2026-05-03) and SBIR submission (2026-09-05). It is structured around the §13 pre-delivery checklist as the immediate gate, then the ACR-abstract / Kaleb-preliminary / SBIR-preliminary-data milestones in sequence.
 
 Each phase names: **inputs**, **deliverables**, **owner / collaborator touchpoints**, **acceptance criteria**, and **target window**.
+
+> **Calendar status as of 2026-05-23.** Original §13 confirmation target (5/15) and v3.0-FINAL gate (5/20) have slipped. New near-term anchor is the **2026-05-26 FORWARD/UNMC working call** with Kaleb Michaud, Adam Cornish (UNMC IT head), and Rebecca Schumacher (FORWARD ED). See **`PRE_CALL_CHECKLIST.md`** for the call-specific deliverables, Adam-asks one-pager, and pre-call work plan. The 5/26 call now drives Phase 0 scaffold completion (this weekend) and F2 checkpoints 1+2 to green by Tuesday.
 
 ---
 
