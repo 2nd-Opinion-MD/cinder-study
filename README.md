@@ -37,11 +37,29 @@ See **PROTOCOL_v3.0-FINAL §10** for the full IP table and replicability posture
 ```bash
 git clone https://github.com/<org>/cinder-study
 cd cinder-study
-python -m venv .venv && . .venv/Scripts/activate  # on Windows; .venv/bin/activate on Linux/macOS
-pip install -e ".[dev]"
+```
+
+Then set up the project virtual environment per [`VENV.md`](VENV.md). Short version:
+
+```powershell
+# Windows PowerShell
+py -3.12 -m venv .CINDER_VENV --prompt .CINDER_VENV
+.\.CINDER_VENV\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
 pre-commit install
 pytest -q
 ```
+
+```bash
+# WSL / Linux / macOS
+python3 -m venv .CINDER_VENV --prompt .CINDER_VENV
+source .CINDER_VENV/bin/activate
+python -m pip install -e ".[dev]"
+pre-commit install
+pytest -q
+```
+
+Activated, your prompt becomes `(.CINDER_VENV) ...`. Glass-box principle: if you don't see that prefix, you are not in the right environment. See [`VENV.md`](VENV.md) for the full setup matrix, the WSL-on-NTFS performance gotcha, and the pinning policy.
 
 ## Repository layout
 

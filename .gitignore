@@ -34,6 +34,14 @@ htmlcov/
 MANIFEST
 
 # --- Environments ---
+# Canonical project venv (see VENV.md for setup).
+.CINDER_VENV/
+.CINDER_VENV_*/
+
+# Generic venv catchalls. The 2OPMD glass-box convention is to name venvs
+# `.CINDER_VENV` so the activated prompt makes it obvious which project you're
+# in; these patterns guard against the implicit-default `.venv/` accidentally
+# being committed if a contributor uses tooling that auto-creates it.
 .venv/
 venv/
 env/
