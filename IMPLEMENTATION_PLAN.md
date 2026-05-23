@@ -628,17 +628,27 @@ The hard gate is Phase 3 (v3.0-FINAL tag by 2026-05-20). Phases 0–2 are the wo
 
 ---
 
+## Decisions locked (2026-05-23)
+
+Calendar pressure does not allow another round-trip on these items before the 5/26 call. Dylan has made the call on items 6 and 8 below using the default plan, and on the PTV input contract schema (newly added). Andras can countermand any of these on Monday with no rework cost beyond a one-paragraph plan amendment; doing nothing means the defaults stand.
+
+| # | Decision | Locked at | Rationale |
+|---|---|---|---|
+| **6. Bayesian-engine vendoring** | **Option A — vendor `bayes.py` / `uc.py` / `fetch_mkg_bayes_prior` into `cinder/bayes/`** | 2026-05-23 | (a) §10 commits CINDER to "open methods" — Option B's private-package model directly conflicts with that. (b) Strategy doc §5.1 always intended the kernel layer to be open. (c) License compatibility is internal-to-internal MIT; no friction. (d) Code volume is small and stable: `bayes.py` ~1,020 lines, `uc.py` ~ similar order, `fetch_mkg_bayes_prior` is a single function. (e) Self-contained replication is the §10 commitment to Kaleb. |
+| **8. MVP commit baseline** | **Pin at `00eaa9eb` (2026-05-05) for `protocol-v3.0-FINAL`. Re-evaluate upgrades per CINDER minor release; never auto-track HEAD.** | 2026-05-23 | Pre-registration immutability — the protocol commit hash submitted to ACR must point to a Bayesian engine that doesn't change underneath us. Upgrade evaluation cadence is "post-tag, before next minor release." |
+| **PTV input contract schema** | **Published as `schemas/ptv_input.schema.json`** | 2026-05-23 | Strict on the small core that `bayes.py` actually reads (events, annotations.{card,salience,status_flags,value}, timestamps, metadata.pii_scrubbed); permissive (`additionalProperties: true`) on index sidecars (`metadata.index/entities/code_index`) since they're tooling outputs that grow. Includes a `cinder_pro` annotation slot for FORWARD PRO score fields (`instrument`, `score`, `wave_number`, `wave_date`, `delta_from_baseline`, `exceeds_band`) per §4.4. The 632-event reference fixture validates against this schema as of this commit; 17 PTV-schema regression tests in `tests/unit/test_ptv_input_schema.py` exercise both positive and negative cases. |
+
 ## Open questions for Andras
 
-These are the items where Dylan would benefit from a single-line yes/no before committing to the plan above:
+The remaining items where Dylan would still benefit from a single-line yes/no:
 
 1. **Repo visibility.** Public from initial commit (per §13 item 5 "public-facing repo")? Or private until v3.0-FINAL tag, then flipped public? Public-from-day-zero is what the §13 language reads as.
-2. **License scope.** MIT for the analysis code is the recommended default; confirm before LICENSE is committed in Phase 0.
-3. **Hosting.** GitHub vs alternative (GitLab, internal)? §13 references "GitHub repository scaffold" so GitHub is presumed.
-4. **CI runner.** GitHub Actions on `ubuntu-latest`? Or also `windows-latest` to match Dylan's primary dev env? Default plan is both.
+2. **License scope.** MIT for the analysis code is the recommended default; the `LICENSE` file in this commit assumes MIT. Confirm before push to remote.
+3. **Hosting.** GitHub vs alternative (GitLab, internal)? §13 references "GitHub repository scaffold" so GitHub is presumed; CI workflow assumes GitHub Actions.
+4. **CI runner matrix.** Currently configured for `ubuntu-latest` + `windows-latest` × Python 3.11 + 3.12. Confirm or trim.
 5. **Phase 8 fallback.** If DUA has not executed by 2026-05-31, is the Kaleb preliminary delivery synthetic-exemplar-based (with that limitation explicitly named)? Default plan assumes yes.
-6. **Bayesian-engine vendoring.** Option A (vendor `bayes.py` / `uc.py` / `fetch_mkg_bayes_prior` into `cinder/bayes/` as a small open package) vs Option B (reference `2ndOpinionMD-MVP` as a private dependency). Default plan is **Option A** — keeps CINDER self-contained for §10 external replication and matches strategy doc §5.1's intent that the kernel layer is open. Option B is lighter-weight but constrains external replicators.
-7. **§4.4 RAPID3 threshold.** The protocol §4.4 names ≥ 3.6 as the RAPID3 MCID; the MVP `flare_30d` likelihood spec doesn't include RAPID3 as a separate rule. Confirming the §4.4 number is canonical (vs. e.g. 3.0 or 3.8 in some published literature) so Phase 4.B encodes the exact threshold without a second revision.
-8. **MVP commit baseline.** Dylan's vendor copy targets MVP commit `00eaa9eb` (2026-05-05, "Add Bayesian UC reasoning + demo-mode verbose logging"). If the MVP keeps evolving the kernel layer (e.g. adding hypotheses, refining likelihood specs), should CINDER track HEAD or pin the v3.0-FINAL-aligned commit? Default plan: pin at `v3.0-FINAL` time, evaluate upgrades per release.
+7. **§4.4 RAPID3 threshold.** Protocol §4.4 names ≥ 3.6 as the RAPID3 MCID; the MVP `flare_30d` likelihood spec doesn't include RAPID3 as a separate rule. Confirm the §4.4 number is canonical (vs. e.g. 3.0 or 3.8 in some published literature) so Phase 4.B encodes the exact threshold without a second revision.
 
-A single-line "yes, fine as drafted" on the above unblocks Phase 0 immediately.
+(Items 6 and 8 from the prior list are now in "Decisions locked" above.)
+
+A single-line "yes, fine as drafted" on the remaining six items unblocks Phase 4 vendoring.

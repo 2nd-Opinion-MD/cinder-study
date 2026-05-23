@@ -12,7 +12,7 @@ Status: **in progress** (this commit lands the scaffold; CI green-light pending 
 |---|---|---|
 | Canonical directory layout per IMPLEMENTATION_PLAN.md "Repository topology" | ✅ landed this commit | `cinder/`, `analysis/`, `schemas/`, `fixtures/`, `governance/`, `docs/`, `tests/`, `scripts/`, `data_request/`, `notebooks/` |
 | Four published JSON Schemas | ✅ landed | `schemas/uc_annotation.schema.json`, `schemas/flare_event.schema.json`, `schemas/escalation_event.schema.json`, `schemas/derivation_chain.schema.json` |
-| PTV input contract schema | 🔶 deferred to Phase 1 | Will be added when `cinder.bayes` vendoring lands |
+| PTV input contract schema | ✅ landed (2026-05-23 follow-up) | `schemas/ptv_input.schema.json`. The 632-event reference fixture validates against it. 17 regression tests in `tests/unit/test_ptv_input_schema.py` cover positive (real fixture, minimal PTV, FORWARD PRO event with cinder_pro block) and negative (missing pii_scrubbed, missing card, malformed UUID, invalid timestamp, invalid PRO instrument, negative salience, etc.) cases. |
 | Vendored Bayesian kernel layer (`cinder.bayes`) | 🔶 placeholder package only — vendoring scheduled for Phase 4 | `cinder/bayes/__init__.py` placeholder; vendoring source `2ndOpinionMD-MVP@00eaa9eb` |
 | `pyproject.toml` with deps + dev + sampling + notebook extras | ✅ landed | `pyproject.toml` |
 | `.gitignore` with PII deny patterns | ✅ landed | `.gitignore` |
@@ -37,8 +37,7 @@ Status: **in progress** (this commit lands the scaffold; CI green-light pending 
 ## Open items before §13.5 can be fully closed
 
 1. **First green CI run** on Linux + Windows × Python 3.11 + 3.12 — requires push to GitHub. Target: 2026-05-25.
-2. **PTV input contract schema** — deferred to Phase 1 alongside the vendored `cinder.bayes` package; not strictly required for §13.5 since the four published schemas listed in §10 are landed.
-3. **Andras Option A vs Option B vendoring decision** — still open. This memo assumes Option A (vendor source) per the IMPLEMENTATION_PLAN.md default.
+2. **Vendor copy of `bayes.py` / `uc.py` / `fetch_mkg_bayes_prior` into `cinder/bayes/`** — Phase 4 work. Decision is locked (Option A, pinned at MVP commit `00eaa9eb` per IMPLEMENTATION_PLAN.md "Decisions locked" table). Code copy itself is the next forward step after PTV input contract schema (which landed 2026-05-23) but does not block §13.5 closure since §13.5 is the scaffold-level checkpoint.
 
 ## Approval
 
