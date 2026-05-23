@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://2opmd.com/cinder/schemas/flare_event.schema.json",
+  "title": "CINDER confirmed flareEvent record",
+  "description": "A confirmed flareEvent per PROTOCOL_DRAFT_v3 §0 / §4.6: a candidate signal event paired with a co-occurring care escalation event within the ±90-day window, surviving all M62/M63 governance gates. Carries domain shift bundle, escalation bundle, temporal offset, UC annotations, and M63 derivation chain reference.",
+  "type": "object",
+  "required": [
+    "flare_event_id",
+    "patient_id",
+    "wave_number",
+    "wave_date",
+    "domain_shift_bundle",
+    "escalation_bundle",
+    "temporal_offset_days",
+    "uc_annotation",
+    "derivation_chain_id",
+    "comparator_matches"
+  ],
+  "properties": {
+    "flare_event_id": {
+      "type": "string",
+      "description": "Stable identifier for this flareEvent record.",
+      "pattern": "^cinder_fe_[a-f0-9]{16}$"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Anonymized patient identifier from FORWARD export."
+    },
+    "wave_number": {
+      "type": "integer",
+      "description": "FORWARD semi-annual wave number (1-indexed).",
+      "minimum": 1
+    },
+    "wave_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date of the wave anchoring this flareEvent."
+    },
+    "domain_shift_bundle": {
+      "type": "object",
+      "description": "PRO domain shifts that contributed to candidate signal status (§4.4).",
+      "required": ["stack_level", "domain_shifts"],
+      "properties": {
+        "stack_level": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Number of PRO domains exceeding both MCID threshold and M3 Stability Band. Must be ≥ 2 by §4.4 candidate signal definition."
+        },
+        "domain_shifts": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["instrument", "delta", "mcid_threshold", "exceeds_band"],
+            "properties": {
+              "instrument": {
+                "type": "string",
+                "enum": ["HAQ-II", "PainVAS", "PatientGlobalVAS", "RAPID3"],
+                "description": "PRO instrument per §4.4 table."
+              },
+              "delta": {
+                "type": "number",
+                "description": "Numerical change vs the patient's M2 baseline."
+              },
+              "mcid_threshold": {
+                "type": "number",
+                "description": "§4.4 MCID threshold for this instrument (HAQ-II 0.22, Pain VAS 20, Patient Global VAS 20, RAPID3 3.6)."
+              },
+              "exceeds_band": {
+                "type": "boolean",
+                "description": "Whether the shift exceeds the M3-computed Stability Band for this patient × instrument."
+              },
+              "value_pre": { "type": "number" },
+              "value_post": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "escalation_bundle": {
+      "type": "object",
+      "description": "Care escalation event(s) co-occurring with the candidate signal (§4.5).",
+      "required": ["primary_escalation_event_id", "escalation_category", "escalation_date"],
+      "properties": {
+        "primary_escalation_event_id": {
+          "type": "string",
+          "description": "Reference to the primary escalation event in the source PTV."
+        },
+        "escalation_category": {
+          "type": "string",
+          "enum": [
+            "dmard_initiation",
+            "biologic_initiation",
+            "tsdmard_initiation",
+            "corticosteroid_rescue_burst",
+            "dose_increase",
+            "therapy_switch",
+            "bridge_therapy"
+          ],
+          "description": "M4.A escalation taxonomy category routed via M6."
+        },
+        "escalation_date": { "type": "string", "format": "date" },
+        "secondary_escalation_event_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Other escalation events within the ±90-day window, recorded for audit but not the primary match (§4.6 secondary associations)."
+        },
+        "m6_arbitration_outcome": {
+          "type": ["string", "null"],
+          "description": "M6 arbitration label when the maintenance-vs-rescue rule applied (e.g., `maintenance-escalation-ambiguous-resolved`)."
+        }
+      }
+    },
+    "temporal_offset_days": {
+      "type": "integer",
+      "description": "Signed offset (PRO shift wave date) − (escalation date), in days. Within ±90 per §4.6 primary window.",
+      "minimum": -120,
+      "maximum": 120
+    },
+    "window_size_days": {
+      "type": "integer",
+      "description": "Window applied for this match. 90 = primary; 60 / 120 = sensitivity analyses.",
+      "enum": [60, 90, 120]
+    },
+    "uc_annotation": {
+      "$ref": "uc_annotation.schema.json"
+    },
+    "derivation_chain_id": {
+      "type": "string",
+      "description": "Reference to the M63 GlassBox derivation chain record for this flareEvent."
+    },
+    "comparator_matches": {
+      "type": "object",
+      "description": "Comparator matching outcomes per §4.6 1:1 rule.",
+      "properties": {
+        "clinician_rated": {
+          "type": "object",
+          "properties": {
+            "matched": { "type": "boolean" },
+            "comparator_event_id": { "type": ["string", "null"] },
+            "match_offset_days": { "type": ["integer", "null"] }
+          }
+        },
+        "omeract": {
+          "type": "object",
+          "properties": {
+            "matched": { "type": "boolean" },
+            "indeterminate": { "type": "boolean" },
+            "patient_global_vas_delta": { "type": ["number", "null"] }
+          }
+        },
+        "mollard_smartphone": {
+          "type": "object",
+          "properties": {
+            "matched": { "type": "boolean" },
+            "applicable": {
+              "type": "boolean",
+              "description": "False when the patient lacks smartphone follow-up data."
+            },
+            "comparator_event_id": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "episode_classification": {
+      "type": "object",
+      "description": "§4.10 recurrent-event handling.",
+      "properties": {
+        "episode_id": { "type": "string" },
+        "is_independent_event": { "type": "boolean" },
+        "predecessor_flare_event_id": { "type": ["string", "null"] },
+        "interflare_interval_days": { "type": ["integer", "null"] }
+      }
+    },
+    "governance_status": {
+      "type": "string",
+      "enum": ["accept", "defer", "reject", "refuse"],
+      "description": "M62 governance verdict for this flareEvent (§4.7 four outcomes)."
+    }
+  },
+  "additionalProperties": false
+}

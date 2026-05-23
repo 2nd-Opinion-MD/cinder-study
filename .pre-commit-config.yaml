@@ -1,0 +1,58 @@
+# Pre-commit hooks — runs `pre-commit install` once after clone.
+# Per IMPLEMENTATION_PLAN.md Phase 0 acceptance criteria.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.json$
+      - id: end-of-file-fixer
+        exclude: \.json$
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]  # Allow up to 5MB for the 632-event PTV fixture
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - types-PyYAML
+          - types-jsonschema
+          - numpy
+          - pandas-stubs
+        exclude: ^(tests/|fixtures/)
+
+  # Custom: validate fixtures against published schemas.
+  - repo: local
+    hooks:
+      - id: validate-schemas
+        name: validate JSON Schemas + fixtures
+        entry: python scripts/validate_schemas.py
+        language: system
+        files: ^(schemas/|fixtures/.*\.json$)
+        pass_filenames: false
+
+  # Custom: PII tripwire — blocks any commit containing PTV-shaped JSON
+  # without a verified `metadata.pii_scrubbed` block.
+  - repo: local
+    hooks:
+      - id: pii-tripwire
+        name: block unscrubbed PTV files
+        entry: python scripts/pii_tripwire.py
+        language: system
+        files: \.json$
+        pass_filenames: true

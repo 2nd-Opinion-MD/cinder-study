@@ -1,0 +1,31 @@
+# CINDER docs
+
+This directory holds the §13 confirmation memos, mapping documents, and confirmation logs that gate `protocol-v3.0-FINAL` tag readiness.
+
+## §13 confirmation memos (per `PROTOCOL_DRAFT_v3 §13`)
+
+| Memo | Status | Phase | Gate |
+|---|---|---|---|
+| `CONFIRM_REPO_SCAFFOLD.md` | in progress | Phase 0 | §13.5 |
+| `CONFIRM_SOFTWARE.md` | pending | Phase 1 | §13.4 |
+| `CONFIRM_SAMPLE_SIZE.md` | pending | Phase 2 | §13.1 |
+| `CONFIRM_COMPARATOR_MATCHING.md` | pending | Phase 3 | §13.2 |
+| `CONFIRM_OMERACT.md` | pending | Phase 3 | §13.3 |
+| `CONFIRM_MOLLARD_MAPPING.md` | pending | Phase 5 | §13.6 |
+
+Each memo follows the same template (see `_TEMPLATE.md` once Phase 0 completes):
+
+1. **Question** — verbatim from §13.
+2. **Answer** — confirmed value(s) and rationale.
+3. **Evidence** — links to the analysis output, simulation log, or external citation supporting the answer.
+4. **Approval** — Andras + Dylan sign-off date and commit hash.
+
+## Other docs
+
+| File | Purpose |
+|---|---|
+| `terminology_map.md` | F2/F4 (internal 2OPMD phase names) ↔ IMPLEMENTATION_PLAN.md phases (see `IMPLEMENTATION_PLAN.md` `terminology_map` for the canonical version) |
+| `architecture_overview.md` | Open-vs-closed module diagram per protocol §10 |
+| `replicability_pathway.md` | Detailed description of the blinded external re-run pathway |
+
+These docs are populated as their gating phase completes.

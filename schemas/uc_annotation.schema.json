@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://2opmd.com/cinder/schemas/uc_annotation.schema.json",
+  "title": "CINDER UncertaintyCarrier annotation",
+  "description": "Posterior-summary UC bundle per PROTOCOL_DRAFT_v3 §4.7. Wire-compatible with the `uc.v1.bayes` schema vendored from 2ndOpinionMD-MVP `server/eoh/uc.py` (commit 00eaa9eb). Adds the §4.7 5-component mapping (signal density, evidence strength, anticipation flag, widening flag, refusal flag) on top of the core posterior fields.",
+  "type": "object",
+  "required": [
+    "hypothesis_id",
+    "point_estimate",
+    "band_90",
+    "confidence",
+    "method",
+    "prior",
+    "schema"
+  ],
+  "properties": {
+    "hypothesis_id": {
+      "type": "string",
+      "description": "Hypothesis identifier. Default CINDER set: `flare_30d`, `progression_3mo`, `taper_safety`. Custom IDs allowed when prior + likelihood_spec are supplied.",
+      "examples": ["flare_30d", "progression_3mo", "taper_safety"]
+    },
+    "point_estimate": {
+      "type": "number",
+      "description": "Posterior mean. For Beta-Bernoulli on a probability hypothesis, value is in [0, 1]."
+    },
+    "band_90": {
+      "type": "array",
+      "description": "90% equal-tail credible interval [5th percentile, 95th percentile].",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Stability score in [0, 1] derived from band width via `confidence_from_band`. 1 = sharp posterior, 0 = diffuse.",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "confidence_label": {
+      "type": "string",
+      "enum": ["low", "moderate", "high", "very_high"],
+      "description": "Legacy categorical label derived from `confidence` numeric."
+    },
+    "basis": {
+      "type": "array",
+      "description": "Human-readable reasons / spec hash / lineage tags. Must include `spec_hash=<hash>` and at least one evidence summary line.",
+      "items": { "type": "string" }
+    },
+    "evidence_event_ids": {
+      "type": "array",
+      "description": "PTV event_ids the update conditioned on. Must be a subset of the input PTV's events.",
+      "items": { "type": "string" }
+    },
+    "method": {
+      "type": "string",
+      "description": "Kernel tag identifying the math used.",
+      "enum": [
+        "beta_conjugate_v1",
+        "gamma_conjugate_v1",
+        "normal_normal_conjugate_v1"
+      ]
+    },
+    "prior": {
+      "type": "object",
+      "description": "Full prior specification (family, parameters, source, notes).",
+      "required": ["family"],
+      "properties": {
+        "family": { "type": "string", "enum": ["beta", "gamma", "normal"] },
+        "alpha": { "type": "number" },
+        "beta": { "type": "number" },
+        "mu": { "type": "number" },
+        "sigma": { "type": "number" },
+        "sigma_obs": { "type": "number" },
+        "source": {
+          "type": "string",
+          "enum": ["weak", "mkg", "clinician"],
+          "description": "Provenance: weak = strategy-doc default; mkg = population prior from sidecar table; clinician = manual override (requires reason + discovered_by)."
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "posterior_params": {
+      "type": "object",
+      "description": "Full posterior parameters in the same family as the prior.",
+      "additionalProperties": { "type": "number" }
+    },
+    "likelihood_summary": {
+      "type": "object",
+      "description": "Summary of evidence aggregation: rule hits, weighted counts, salience usage.",
+      "properties": {
+        "n_pos": { "type": "number" },
+        "n_neg": { "type": "number" },
+        "n_skip": { "type": "number" },
+        "rule_hits": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "weight_by": { "type": ["string", "null"] },
+        "n_rules": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "spec_hash": {
+      "type": ["string", "null"],
+      "description": "SHA-256 prefix of canonical JSON of (prior + likelihood_spec). Format: `uc_<16-hex-chars>`."
+    },
+    "schema": {
+      "type": "string",
+      "const": "uc.v1.bayes",
+      "description": "Schema version. Pinned to vendored MVP shape."
+    },
+    "notes": { "type": ["string", "null"] },
+    "cinder_components": {
+      "type": "object",
+      "description": "CINDER §4.7 5-component UC mapping. These are derived from the core fields above; they live alongside for explicit protocol compliance.",
+      "properties": {
+        "signal_density": {
+          "type": "number",
+          "description": "Proportion of expected PRO item fields present in prior K=2 waves. [0, 1].",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence_strength": {
+          "type": "number",
+          "description": "Magnitude of PRO shift relative to MCID, summed across qualifying domains."
+        },
+        "anticipation_flag": {
+          "type": "boolean",
+          "description": "Set when posterior predictive widened in the wave preceding the detected event (P4 pattern, §4.7)."
+        },
+        "widening_flag": {
+          "type": "boolean",
+          "description": "Set when posterior predictive widening occurred in the absence of detection (P5 pattern, §4.7)."
+        },
+        "refusal_flag": {
+          "type": "boolean",
+          "description": "Set when underlying evidence was insufficient to support detection or non-detection. Refusal is a first-class outcome per §4.7."
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,80 @@
+# --- PII protection (HIGHEST PRIORITY — DO NOT EDIT WITHOUT GOVERNANCE REVIEW) ---
+# Block any unscrubbed PTV from ever entering the repo. Per protocol §9.1 / §9.4
+# only files whose `metadata.pii_scrubbed` block has been audited CLEAN may be
+# committed. Pattern matches: any PTV-shaped JSON without `_scrubbed` in the name.
+*_full_*.json
+*_pretty.json
+!*_scrubbed_pretty.json
+*_pg_export_*.json
+*_indexed_*_v1.json
+*_indexed_*_v1_noarcs.json
+!*_indexed_*_v1_noarcs_scrubbed_pretty.json
+NormanEricRoberts*
+*decrypted*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.egg
+MANIFEST
+
+# --- Environments ---
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.local
+
+# --- Lock files (allow uv.lock + poetry.lock; deny pip freeze artifacts) ---
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+*.ipynb_meta
+
+# --- Local outputs ---
+output/
+outputs/
+results/local/
+*.local.*
+scratch/
+tmp/
+
+# --- Production data (never committed; lives in 2OPMD analytic environment) ---
+data/forward/
+data/production/
+data_request/forward_export_*
+
+# --- Coverage / CI artifacts ---
+.coverage
+coverage.xml
+*.cover
+.cache
+nosetests.xml
+junit.xml

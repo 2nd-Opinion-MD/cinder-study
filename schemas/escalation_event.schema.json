@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://2opmd.com/cinder/schemas/escalation_event.schema.json",
+  "title": "CINDER categorized care escalation event",
+  "description": "A care escalation event categorized per M4.A escalation taxonomy and routed via M6 Escalation Router (PROTOCOL_DRAFT_v3 §4.5). Date-stamped, categorized, with optional M6 arbitration metadata when the maintenance-vs-rescue rule applied.",
+  "type": "object",
+  "required": [
+    "escalation_event_id",
+    "patient_id",
+    "escalation_date",
+    "category",
+    "source_event_id"
+  ],
+  "properties": {
+    "escalation_event_id": {
+      "type": "string",
+      "pattern": "^cinder_esc_[a-f0-9]{16}$"
+    },
+    "patient_id": { "type": "string" },
+    "escalation_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the escalation event was recorded."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "dmard_initiation",
+        "biologic_initiation",
+        "tsdmard_initiation",
+        "corticosteroid_rescue_burst",
+        "dose_increase",
+        "therapy_switch",
+        "bridge_therapy"
+      ],
+      "description": "M4.A escalation taxonomy category."
+    },
+    "source_event_id": {
+      "type": "string",
+      "description": "Reference to the source PTV medication event."
+    },
+    "drug": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "rxnorm_code": { "type": ["string", "null"] },
+        "therapy_class": {
+          "type": "string",
+          "enum": ["DMARD", "biologic", "tsDMARD", "corticosteroid", "other"]
+        },
+        "dose": { "type": ["number", "string", "null"] },
+        "dose_unit": { "type": ["string", "null"] },
+        "frequency": { "type": ["string", "null"] },
+        "route": {
+          "type": ["string", "null"],
+          "enum": ["oral", "parenteral", "topical", "intra-articular", "other", null]
+        },
+        "prednisone_equivalent_dose_mg": {
+          "type": ["number", "null"],
+          "description": "Computed only for corticosteroid events; needed for §4.5 maintenance-vs-rescue rule."
+        }
+      }
+    },
+    "maintenance_vs_rescue": {
+      "type": "object",
+      "description": "Operational outcome of the §4.5 maintenance-vs-rescue rule.",
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": ["rescue_burst", "maintenance_regimen", "ambiguous_resolved", "not_applicable"]
+        },
+        "prior_two_waves_dose_below_threshold": { "type": "boolean" },
+        "consecutive_maintenance_waves": { "type": "integer", "minimum": 0 },
+        "m6_arbitration_label": { "type": ["string", "null"] }
+      }
+    },
+    "is_initiation": {
+      "type": "boolean",
+      "description": "True if this is a new prescription (vs dose-change of an existing therapy)."
+    },
+    "is_dose_change": { "type": "boolean" },
+    "discovered_by": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Provenance tags identifying the routing/extraction pipeline that produced this record."
+    }
+  },
+  "additionalProperties": false
+}

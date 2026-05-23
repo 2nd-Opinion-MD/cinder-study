@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://2opmd.com/cinder/schemas/derivation_chain.schema.json",
+  "title": "CINDER M63 GlassBox derivation chain",
+  "description": "Full derivation trace per PROTOCOL_DRAFT_v3 §4.9. Every detected flareEvent emits this chain. The chain records every input that contributed to the detection, every intermediate computation flag, every governance gate the candidate passed, and every UC component value. Any detected event can be reconstructed from its derivation chain alone. M63 internal compliance logic is 2OPMD proprietary; the chain output schema below is open.",
+  "type": "object",
+  "required": [
+    "derivation_chain_id",
+    "flare_event_id",
+    "schema",
+    "patient_id",
+    "wave_number",
+    "inputs",
+    "intermediate_flags",
+    "governance_gates",
+    "uc_components",
+    "spec_hash",
+    "produced_at"
+  ],
+  "properties": {
+    "derivation_chain_id": {
+      "type": "string",
+      "pattern": "^cinder_dc_[a-f0-9]{16}$"
+    },
+    "flare_event_id": {
+      "type": "string",
+      "description": "Back-reference to the flareEvent this chain produced."
+    },
+    "schema": {
+      "type": "string",
+      "const": "derivation_chain.v1",
+      "description": "Schema version pin."
+    },
+    "patient_id": { "type": "string" },
+    "wave_number": { "type": "integer", "minimum": 1 },
+    "inputs": {
+      "type": "object",
+      "description": "Every input that contributed to the detection, traceable to source.",
+      "required": ["ptv_event_ids", "ptv_schema_version", "m2_baseline_ref", "m3_terrain_ref"],
+      "properties": {
+        "ptv_event_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PTV event_ids that participated in detection (PRO shifts, escalations, baseline windows)."
+        },
+        "ptv_schema_version": {
+          "type": "string",
+          "examples": ["ptv.2.1-indexed-v1-noarcs"]
+        },
+        "m2_baseline_ref": {
+          "type": "object",
+          "description": "Reference to the M2 Chronic Baseline Mode output used (proprietary module by interface).",
+          "properties": {
+            "module_version": { "type": "string" },
+            "baseline_id": { "type": "string" },
+            "established_at": { "type": "string", "format": "date" }
+          }
+        },
+        "m3_terrain_ref": {
+          "type": "object",
+          "description": "Reference to M3 Terrain Index Engine outputs (Stability Bands + Stack Levels) used.",
+          "properties": {
+            "module_version": { "type": "string" },
+            "stability_band_id": { "type": "string" },
+            "stack_level_at_wave": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "m6_escalation_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Escalation event ids routed via M6."
+        },
+        "mcid_thresholds": {
+          "type": "object",
+          "description": "§4.4 MCID thresholds applied (verbatim from cinder_likelihood_spec.yaml).",
+          "properties": {
+            "haq_ii": { "type": "number" },
+            "pain_vas": { "type": "number" },
+            "patient_global_vas": { "type": "number" },
+            "rapid3": { "type": "number" }
+          }
+        }
+      }
+    },
+    "intermediate_flags": {
+      "type": "object",
+      "description": "Every intermediate computation flag fired during detection.",
+      "properties": {
+        "candidate_signal_status": {
+          "type": "string",
+          "enum": ["fired", "below_threshold", "below_band", "insufficient_warmup"]
+        },
+        "domain_band_exceedances": {
+          "type": "object",
+          "description": "Per-instrument: whether shift exceeded patient-specific Stability Band.",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "rapid3_overlap_clarification_applied": {
+          "type": "boolean",
+          "description": "§4.4 RAPID3 sub-domain double-counting clarification applied (RAPID3 evaluated as composite only)."
+        },
+        "co_occurrence_window_days": { "type": "integer" },
+        "match_succeeded": { "type": "boolean" },
+        "stack_level_tiebreak_applied": { "type": "boolean" }
+      }
+    },
+    "governance_gates": {
+      "type": "array",
+      "description": "M62 / M9 governance invariant evaluations, in order.",
+      "items": {
+        "type": "object",
+        "required": ["gate", "verdict"],
+        "properties": {
+          "gate": {
+            "type": "string",
+            "enum": [
+              "propositionality_invariant",
+              "suppression_first",
+              "no_promotion_without_provenance",
+              "refusal_supremacy",
+              "m9_pause_flag"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": ["pass", "fail", "n/a", "refuse"]
+          },
+          "rationale": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "uc_components": {
+      "$ref": "uc_annotation.schema.json"
+    },
+    "spec_hash": {
+      "type": "string",
+      "description": "SHA-256 prefix over canonical JSON of (prior + likelihood_spec + module_versions). Proves which spec version produced this chain.",
+      "pattern": "^uc_[a-f0-9]{16}$"
+    },
+    "produced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this chain was emitted."
+    },
+    "produced_by": {
+      "type": "object",
+      "description": "Pipeline version / commit identifier.",
+      "properties": {
+        "pipeline_version": { "type": "string" },
+        "git_commit": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "additionalProperties": false
+}
