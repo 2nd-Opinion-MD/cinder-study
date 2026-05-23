@@ -21,6 +21,7 @@ EXPECTED_SCHEMAS = [
     "flare_event.schema.json",
     "escalation_event.schema.json",
     "derivation_chain.schema.json",
+    "ptv_input.schema.json",
 ]
 
 

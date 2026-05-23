@@ -1,0 +1,308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://2opmd.com/cinder/schemas/ptv_input.schema.json",
+  "title": "CINDER PTV input contract (ptv.2.1-indexed-v1-noarcs)",
+  "description": "The Patient Trajectory Vector (PTV) input contract consumed by `cinder.bayes`. PTVs are produced by the 2OPMD ingest step that consumes FORWARD WebQuest semi-annual wave exports (and EHR when available). The contract pins the small core that the vendored Bayesian kernel layer actually reads (events, annotations.salience, annotations.status_flags, annotations.value, timestamps), and is permissive on the index sidecars (`metadata.index`, `metadata.entities`, `metadata.code_index`) since those are tooling outputs that legitimately grow over time. The required `metadata.pii_scrubbed` block is what couples to scripts/pii_tripwire.py.",
+  "type": "object",
+  "required": ["events", "metadata", "patient_id"],
+  "properties": {
+    "events": {
+      "type": "object",
+      "description": "Event records keyed by event_id. Each value must conform to #/$defs/event.",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/event" }
+    },
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "patient_id": {
+      "type": "string",
+      "description": "Random UUID minted by 2OPMD. Per scrub policy, retained as an identifier with no link-back to identity without 2OPMD's internal mapping table.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "built_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of PTV emission. Optional but strongly preferred for audit chains.",
+      "format": "date-time"
+    },
+    "session_only": {
+      "type": "boolean",
+      "description": "Conversation-mode flag: when true, this PTV is ephemeral and was constructed for a single chatbot session rather than a persisted analytic run."
+    },
+    "$schema_ref": {
+      "type": "string",
+      "description": "Optional self-tag used by scripts/validate_schemas.py to dispatch validation. Set to `ptv_input.schema.json` for explicit dispatch; absent in legacy/historical PTVs."
+    }
+  },
+  "additionalProperties": true,
+
+  "$defs": {
+    "event": {
+      "type": "object",
+      "required": ["event_id", "event_type", "timestamp", "annotations"],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "description": "Stable identifier referenced from index sidecars and connascence relations."
+        },
+        "event_type": {
+          "type": "string",
+          "description": "Categorical event kind. The 12 values observed in the 2026-04-23 noarcs reference PTV. Schema is `enum`-typed for guidance but is intentionally extensible — when FORWARD-derived events introduce new types, add them here in lockstep with the ingest pipeline.",
+          "enum": [
+            "diagnosis",
+            "medication",
+            "lab",
+            "vital_signs",
+            "procedure",
+            "immunization",
+            "clinical_note",
+            "symptom",
+            "visit",
+            "imaging",
+            "administrative",
+            "chapter_administrative",
+            "pro",
+            "pro_wave"
+          ]
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO 8601 date (YYYY-MM-DD) when known; the literal string `unknown` when the source did not date the event; or a `[*_REDACTED]` token when the original timestamp was identifying PII (e.g. a date-of-birth-derived event timestamp). Real-EHR PTVs commonly carry `unknown` and may carry redaction tokens after scrub. FORWARD-derived PRO events should always carry a wave-anchored ISO date.",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2}|unknown|\\[[A-Z_]+_REDACTED\\])$"
+        },
+        "preview": {
+          "type": "string",
+          "description": "Free-text label, typically `<title> [<code>]` for diagnoses or `<drug> <dose>` for medications. Read by `bayes.py::_apply_match` for `preview_contains` rule matching."
+        },
+        "status": {
+          "type": "string",
+          "description": "Inclusion verdict from the upstream ingest pass. `included` = consume; `excluded` = drop from analyses; `deferred` = needs review; `suppressed` = M9 reflex-suppression outcome (event retained for audit but not advanced).",
+          "enum": ["included", "excluded", "deferred", "suppressed"]
+        },
+        "annotations": { "$ref": "#/$defs/annotations" },
+        "connascence": {
+          "type": "object",
+          "description": "Co-occurrence relationships keyed by relation kind (`same_chapter`, `same_drug`, etc). Values are arrays of peer event_ids.",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "discovered_by": {
+          "type": "array",
+          "description": "Provenance tags identifying the extractor / route that produced this record (e.g. `pdf_page_3`, `forward_wave_2024H2`, `regex_icd_code`).",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "annotations": {
+      "type": "object",
+      "description": "Type-discriminated annotation block. The `card` and `salience` fields are required (cards anchor display, salience is read by the Bayesian likelihood weighter). The remaining fields are conditional on event_type and additionalProperties is open.",
+      "required": ["card"],
+      "properties": {
+        "card": {
+          "type": "object",
+          "description": "Compact display + audit summary read by chatbot, PDF renderers, and `bayes.py::_event_salience` (mirror).",
+          "required": ["type", "title"],
+          "properties": {
+            "ts": { "type": "string", "description": "Display-friendly timestamp (may be `unknown`)." },
+            "type": {
+              "type": "string",
+              "description": "Mirror of the event's `event_type` for self-contained card rendering.",
+              "enum": [
+                "diagnosis",
+                "medication",
+                "lab",
+                "vital_signs",
+                "procedure",
+                "immunization",
+                "clinical_note",
+                "symptom",
+                "visit",
+                "imaging",
+                "administrative",
+                "chapter_administrative",
+                "pro",
+                "pro_wave"
+              ]
+            },
+            "title": { "type": "string" },
+            "one_line": { "type": "string" },
+            "salience": { "type": "number", "minimum": 0 },
+            "icd": { "type": ["string", "null"] },
+            "drug": { "type": ["string", "null"] }
+          },
+          "additionalProperties": true
+        },
+        "salience": {
+          "type": "number",
+          "description": "Importance score on the 0..10 scale used by `bayes.py::_event_salience` to weight evidence. Values < 0 are invalid; values > 10 are clipped during weighting per strategy doc §3.",
+          "minimum": 0
+        },
+        "status_flags": {
+          "type": "array",
+          "description": "Status tags read by `bayes.py::_apply_match` for `status_flag_in` rule matching. Examples: `acute`, `chronic`, `worsening`, `improving`, `flare_signal`, `low_disease_activity`, `remission`.",
+          "items": { "type": "string" }
+        },
+        "value": {
+          "description": "Numeric measurement value when applicable (lab results, PRO scores, vital signs). `bayes.py::_apply_match` reads this for `value_above` / `value_below` thresholds.",
+          "type": ["number", "string", "null"]
+        },
+        "unit": { "type": ["string", "null"] },
+        "loinc": { "type": ["string", "null"] },
+        "rxnorm": { "type": ["string", "null"] },
+        "icd_code": { "type": ["string", "null"] },
+        "drug_name": { "type": ["string", "null"] },
+        "drug_dosage": { "type": ["string", "null"] },
+        "pdf_page": { "type": ["integer", "null"] },
+        "chapter_id": { "type": ["string", "null"] },
+        "chapter_kind": {
+          "type": ["string", "null"],
+          "description": "Categorization of the chapter this event belongs to. Values are tooling-defined and grow over time; the schema does not pin an enum. Observed in the EHR reference fixture: `summary`, `encounter`, `cover`."
+        },
+        "section_header": { "type": ["string", "null"] },
+        "entity_keys": {
+          "type": "array",
+          "description": "Canonical entity refs of form `<kind>:<id>` matching keys in `metadata.entities` (e.g. `icd:i10`, `drug:methotrexate`, `drug:hydrocodone-acetaminophen`, `lab:hgb`). Drug names commonly contain hyphens, periods, and parentheses, so the pattern accepts the full set of lowercase identifier characters.",
+          "items": { "type": "string", "pattern": "^[a-z_]+:[a-z0-9_.\\-()/]+$" }
+        },
+        "canonical_id": {
+          "type": ["string", "null"],
+          "description": "Stable hash anchor for cross-PTV deduplication.",
+          "pattern": "^ev_[a-f0-9]{16}$"
+        },
+        "heuristic_source": {
+          "type": ["string", "null"],
+          "description": "Identifier of the extractor heuristic that produced this annotation (`regex_icd_code`, `forward_pro_wave_v1`, `med_table_extractor`, etc)."
+        },
+        "edge_provenance": {
+          "type": "array",
+          "description": "Per-edge provenance entries (preserved on noarcs variants for audit even though traversal arcs are not materialized).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "by": { "type": "string" },
+              "kind": { "type": "string" },
+              "peer": { "type": "string" },
+              "group": { "type": "string" },
+              "strength": { "type": "number" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "cinder_pro": {
+          "type": "object",
+          "description": "CINDER-specific PRO wave annotation. Required on every event whose `event_type` is `pro` or `pro_wave`. Fields below carry the §4.4 detection inputs that the `cinder_likelihood_spec.yaml` rules match against. Absent on legacy / EHR-only events that predate the FORWARD ingest (this is the design — schema is forward-compatible, not retroactive).",
+          "required": ["instrument", "score", "wave_number", "wave_date"],
+          "properties": {
+            "instrument": {
+              "type": "string",
+              "enum": ["HAQ-II", "PainVAS", "PatientGlobalVAS", "RAPID3", "RAPID3_FN", "RAPID3_PN", "RAPID3_PtGA"],
+              "description": "PRO instrument per protocol §4.4. Sub-domains (RAPID3_FN / RAPID3_PN / RAPID3_PtGA) are recorded for audit but, per §4.4 RAPID3 overlap clarification, are NOT counted as independent stack-level domains; only the composite RAPID3 score participates in stack counting."
+            },
+            "score": { "type": "number" },
+            "wave_number": { "type": "integer", "minimum": 1 },
+            "wave_date": { "type": "string", "format": "date" },
+            "delta_from_baseline": {
+              "type": ["number", "null"],
+              "description": "Δ vs M2-established chronic baseline. Populated by the M2 module after baseline establishment; null until then."
+            },
+            "exceeds_band": {
+              "type": ["boolean", "null"],
+              "description": "Whether Δ exceeds the patient-specific M3 Stability Band. Populated by M3 after terrain indexing; null until then."
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "metadata": {
+      "type": "object",
+      "required": ["pii_scrubbed"],
+      "properties": {
+        "pii_scrubbed": {
+          "type": "object",
+          "description": "Mandatory provenance block proving the scrubbing pipeline ran. `scripts/pii_tripwire.py` reads this to gate commits.",
+          "required": ["scrubber", "scrubbed_at"],
+          "properties": {
+            "scrubber": {
+              "type": "string",
+              "description": "Path / identity of the scrubber that ran (e.g. `server/scripts/scrub_real_ptv.py`)."
+            },
+            "scrubbed_at": {
+              "type": "string",
+              "format": "date",
+              "description": "ISO 8601 date of scrub execution."
+            },
+            "rules_applied": { "type": "integer", "minimum": 1 },
+            "replacement_counts_by_label": {
+              "type": "object",
+              "additionalProperties": { "type": "integer", "minimum": 0 }
+            },
+            "audit_file": {
+              "type": ["string", "null"],
+              "description": "Relative path to the leftover-token audit transcript."
+            }
+          },
+          "additionalProperties": true
+        },
+        "pro": {
+          "type": "object",
+          "description": "PRO provenance. `source` distinguishes 2OPMD-internal PROs from FORWARD-derived; `forward` is the WebQuest landing zone (shape currently minimal; will expand once Adam Cornish confirms wave format).",
+          "properties": {
+            "source": { "type": "string", "enum": ["2opmd", "forward", "mixed"] },
+            "forward": {
+              "type": "object",
+              "description": "FORWARD WebQuest provenance block. Pre-call shape: `{patient_reported_outcomes_channel: bool}`. Will expand post-2026-05-26 to carry wave_export_id, wave_count, wave_date_range, instruments_present, etc.",
+              "additionalProperties": true
+            },
+            "mirrored_journal_ids": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+        "patient": {
+          "type": "object",
+          "description": "Patient demographics block. Minimal in the EHR reference fixture (`{dob: [DOB_REDACTED]}`); will expand for FORWARD-derived PTVs to include sex, race, ethnicity, BMI, smoking_status, ra_disease_duration, ra_seropositivity per `data_request/forward_field_spec.md`.",
+          "additionalProperties": true
+        },
+        "index": {
+          "type": "object",
+          "description": "Derived sidecar indexes. Tooling output (chatbot retrieval, PDF rendering, MKG join). Permissive: ingest pipelines may add new index lanes.",
+          "additionalProperties": true
+        },
+        "entities": {
+          "type": "object",
+          "description": "Canonical entity registry keyed by `<kind>:<id>` (e.g. `icd:i10`, `drug:methotrexate`).",
+          "additionalProperties": true
+        },
+        "code_index": {
+          "type": "object",
+          "description": "Code-keyed event lookup tables. Standard buckets are `drugs`, `rxnorm`, `icd`, `labs`, `loinc`. Read by `bayes.py::_event_in_code_bucket` for code-aware likelihood rules.",
+          "properties": {
+            "drugs": { "type": "object", "additionalProperties": true },
+            "rxnorm": { "type": "object", "additionalProperties": true },
+            "icd": { "type": "object", "additionalProperties": true },
+            "labs": { "type": "object", "additionalProperties": true },
+            "loinc": { "type": "object", "additionalProperties": true }
+          },
+          "additionalProperties": true
+        },
+        "last_pdf_ingest": {
+          "type": "object",
+          "description": "Present when the PTV was constructed from a PDF source (the EHR reference fixture). Absent when the PTV was constructed purely from FORWARD WebQuest waves.",
+          "properties": {
+            "filename": { "type": "string" },
+            "total_pages": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -46,11 +46,27 @@ def load_schemas() -> dict[str, dict[str, Any]]:
     return schemas
 
 
+PTV_SCHEMA_NAME = "ptv_input.schema.json"
+
+
+def _is_ptv_shaped(data: object) -> bool:
+    """A PTV is a dict carrying `events`, `metadata`, and `patient_id`. This is
+    the structural fingerprint used to dispatch PTV input contract validation
+    when the fixture does not carry an explicit `$schema_ref`.
+    """
+    if not isinstance(data, dict):
+        return False
+    return all(k in data for k in ("events", "metadata", "patient_id"))
+
+
 def validate_fixtures(schemas: dict[str, dict[str, Any]]) -> int:
-    """Each fixture JSON whose top-level dict carries a `$schema_ref` field is validated
-    against the named schema in `schemas/`. Fixtures without `$schema_ref` are skipped
-    with a notice (production PTVs rely on PII tripwire, not schema validation, until
-    the PTV input contract schema lands).
+    """Validate every fixture JSON. Dispatch order:
+
+    1. If the fixture's top-level dict carries a `$schema_ref` field, validate
+       against the named schema (legacy `payload`-wrapped fixture style).
+    2. Otherwise, if the fixture is PTV-shaped (carries `events` + `metadata` +
+       `patient_id`), validate against `ptv_input.schema.json`.
+    3. Otherwise, skip with a notice.
     """
     if not FIXTURE_DIR.exists():
         _log("info", "no fixtures/ directory yet; skipping fixture validation")
@@ -59,6 +75,8 @@ def validate_fixtures(schemas: dict[str, dict[str, Any]]) -> int:
     failures = 0
     n_validated = 0
     n_skipped = 0
+    ptv_schema = schemas.get(PTV_SCHEMA_NAME)
+
     for path in sorted(FIXTURE_DIR.rglob("*.json")):
         if path.name.startswith("MANIFEST") or path.name == "manifest.json":
             continue
@@ -71,23 +89,39 @@ def validate_fixtures(schemas: dict[str, dict[str, Any]]) -> int:
         if not isinstance(data, dict):
             n_skipped += 1
             continue
+
         ref = data.get("$schema_ref")
-        if not ref or not isinstance(ref, str):
-            n_skipped += 1
+        if isinstance(ref, str) and ref:
+            schema = schemas.get(ref)
+            if schema is None:
+                _log("FAIL", f"fixture {path.name} references unknown schema: {ref}")
+                failures += 1
+                continue
+            try:
+                jsonschema.validate(instance=data.get("payload", data), schema=schema)
+                n_validated += 1
+                _log("ok", f"fixture OK: {path.name} -> {ref}")
+            except jsonschema.ValidationError as exc:
+                _log("FAIL", f"fixture failed: {path.name} -> {ref}: {exc.message}")
+                failures += 1
             continue
-        schema = schemas.get(ref)
-        if schema is None:
-            _log("FAIL", f"fixture {path.name} references unknown schema: {ref}")
-            failures += 1
+
+        if _is_ptv_shaped(data) and ptv_schema is not None:
+            try:
+                jsonschema.validate(instance=data, schema=ptv_schema)
+                n_validated += 1
+                _log("ok", f"fixture OK: {path.name} -> {PTV_SCHEMA_NAME} (auto-detected)")
+            except jsonschema.ValidationError as exc:
+                _log(
+                    "FAIL",
+                    f"PTV fixture failed: {path.name}: {exc.message} at {list(exc.absolute_path)}",
+                )
+                failures += 1
             continue
-        try:
-            jsonschema.validate(instance=data.get("payload", data), schema=schema)
-            n_validated += 1
-            _log("ok", f"fixture OK: {path.name} -> {ref}")
-        except jsonschema.ValidationError as exc:
-            _log("FAIL", f"fixture failed validation: {path.name} -> {ref}: {exc.message}")
-            failures += 1
-    _log("info", f"validated {n_validated} fixtures; skipped {n_skipped} (no $schema_ref)")
+
+        n_skipped += 1
+
+    _log("info", f"validated {n_validated} fixtures; skipped {n_skipped}")
     return failures
 
 
