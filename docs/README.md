@@ -6,11 +6,11 @@ This directory holds the §13 confirmation memos, mapping documents, and confirm
 
 | Memo | Status | Phase | Gate |
 |---|---|---|---|
-| `CONFIRM_REPO_SCAFFOLD.md` | in progress | Phase 0 | §13.5 |
-| `CONFIRM_SOFTWARE.md` | pending | Phase 1 | §13.4 |
+| `CONFIRM_REPO_SCAFFOLD.md` | partially closed | Phase 0 | §13.5 |
+| `confirmation_software.md` | **confirmed (2026-05-24)** | Phase 1 | §13.4 |
+| `confirmation_matching_rule.md` | **confirmed-with-caveats (2026-05-24)** | Phase 1 | §13.2 |
+| `confirmation_omeract.md` | **confirmed-with-caveats (2026-05-24)** | Phase 1 | §13.3 |
 | `CONFIRM_SAMPLE_SIZE.md` | pending | Phase 2 | §13.1 |
-| `CONFIRM_COMPARATOR_MATCHING.md` | pending | Phase 3 | §13.2 |
-| `CONFIRM_OMERACT.md` | pending | Phase 3 | §13.3 |
 | `CONFIRM_MOLLARD_MAPPING.md` | pending | Phase 5 | §13.6 |
 
 Each memo follows the same template (see `_TEMPLATE.md` once Phase 0 completes):

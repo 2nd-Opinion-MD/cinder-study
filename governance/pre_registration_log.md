@@ -18,11 +18,18 @@ The protocol cannot be tagged `v3.0-FINAL` until every line of the `PROTOCOL_DRA
 | Item | Status | Confirmation memo |
 |---|---|---|
 | §13.1 Sample size simulation closed | pending | `docs/CONFIRM_SAMPLE_SIZE.md` (Phase 2) |
-| §13.2 Comparator matching rule confirmed | pending | `docs/CONFIRM_COMPARATOR_MATCHING.md` (Phase 3) |
-| §13.3 OMERACT comparator operationalization confirmed | pending | `docs/CONFIRM_OMERACT.md` (Phase 3) |
-| §13.4 Software platform confirmed (PyMC + vendored conjugate kernels) | pending | `docs/CONFIRM_SOFTWARE.md` (Phase 1) |
-| §13.5 Repository scaffold + open schemas published | **in progress (this commit)** | `docs/CONFIRM_REPO_SCAFFOLD.md` (Phase 0) |
+| §13.2 Comparator matching rule confirmed | **confirmed-with-caveats (2026-05-24)** | `docs/confirmation_matching_rule.md` |
+| §13.3 OMERACT comparator operationalization confirmed | **confirmed-with-caveats (2026-05-24)** | `docs/confirmation_omeract.md` |
+| §13.4 Software platform confirmed (PyMC + vendored conjugate kernels) | **confirmed (2026-05-24)** | `docs/confirmation_software.md` |
+| §13.5 Repository scaffold + open schemas published | **partially closed** | `docs/CONFIRM_REPO_SCAFFOLD.md` |
 | §13.6 Mollard 2026 mapping confirmation | pending | `docs/CONFIRM_MOLLARD_MAPPING.md` (Phase 5) |
+
+**Caveat carry-forward (§13.2 + §13.3).** Both confirmation memos are confirmed-with-caveats pending Adam Cornish's 2026-05-26 FORWARD/UNMC call answers on three FORWARD-side field characteristics:
+- §13.2 Caveat 1 — clinician-rated flare flag availability and structure.
+- §13.2 Caveat 2 — Mollard smartphone subgroup size.
+- §13.3 Caveats A+B+C — Patient Global VAS coverage, RxNorm coding, oral/parenteral corticosteroid distinction.
+
+The matching/OMERACT logic itself is implementable as written under all branches of these caveats; only the comparator status (primary vs sensitivity vs descriptive-only) and corner-case routing change. If Adam reports a structural gap that forces protocol §1.4/§4.6/§4.8/§5.1 micro-revision, the affected gate flips from "confirmed-with-caveats" back to "pending" and a v3.0-AMEND-1 protocol revision is committed before the v3.0-FINAL tag.
 
 ## Tagging procedure (when ready)
 
