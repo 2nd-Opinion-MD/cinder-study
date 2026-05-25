@@ -27,5 +27,7 @@ Each memo follows the same template (see `_TEMPLATE.md` once Phase 0 completes):
 | `terminology_map.md` | F2/F4 (internal 2OPMD phase names) ↔ IMPLEMENTATION_PLAN.md phases (see `IMPLEMENTATION_PLAN.md` `terminology_map` for the canonical version) |
 | `architecture_overview.md` | Open-vs-closed module diagram per protocol §10 |
 | `replicability_pathway.md` | Detailed description of the blinded external re-run pathway |
+| `synthetic_exemplar_regeneration_plan.md` | §F2 plan for regenerating with-arcs exemplars to noarcs (addresses Andras pre-call ask #3) |
+| `tuesday_call_talking_points.md` | **Internal cheat sheet for the 2026-05-26 1pm CDT call with Kaleb, Adam Cornish, and Rebecca Schumacher.** Audience: Dylan + Andras only. Not for distribution to call participants. |
 
 These docs are populated as their gating phase completes.
