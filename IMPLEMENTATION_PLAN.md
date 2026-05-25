@@ -321,7 +321,26 @@ The simulation generates synthetic patient-wave data, runs the per-patient layer
 
 **Deliverables.**
 
-### 4.A — Open schemas (`schemas/`)
+### 4.A — Vendored Bayesian kernel layer (`cinder/bayes/`) — ✅ landed 2026-05-25
+
+Vendored from `2ndOpinionMD-MVP` at locked commit `00eaa9eb` per the "Decisions locked" table:
+
+- `cinder/bayes/uc.py` ← `server/eoh/uc.py` (verbatim; vendoring banner only)
+- `cinder/bayes/graph.py` ← `server/ptv_toolkit/graph.py` (verbatim; vendoring banner only)
+- `cinder/bayes/kernels.py` ← `server/ptv_toolkit/bayes.py` (renamed to avoid shadowing the package; `from server.eoh.uc import ...` rewritten to `from .uc import ...`; otherwise verbatim)
+- `cinder/bayes/mkg_retrieval.py` ← `fetch_mkg_bayes_prior` extracted from `server/scripts/mkg_retrieval_harness.py`. CINDER-specific DSN env var resolution (`CINDER_MKG_DSN`, `MKG_DSN`, `DATABASE_URL` — MVP-internal vars deliberately not consulted) and stdlib logger replacing the MVP's emoji-prefixed `_log` warning. Pre-Phase-6 returns `None` → kernel falls back to weak priors per `DEFAULT_HYPOTHESIS_PRIORS`.
+- `cinder/bayes/__init__.py` — public API surface + `VENDORED_AT_COMMIT = "00eaa9eb"` constant
+- `cinder/bayes/PROVENANCE.md` — vendoring contract: source mapping, edit log, re-vendoring procedure, EoH-handshake stub policy (handshakes live at orchestration layer, not kernel; deliberately not vendored), weak-prior fallback policy
+
+**F2 regression harness landed alongside** (`tests/regression/`):
+- `test_bayes_kernels_unit.py` — closed-form posterior properties: posterior-mean correctness, band-tightening with evidence, fractional-weight handling
+- `test_bayes_harness_q11_q13.py` — ports MVP `ptv_toolkit_questions.json` q11/q12/q13 as data-driven pytest assertions; covers all three default hypotheses (`flare_30d`, `progression_3mo`, `taper_safety`) against the 632-event fixture
+- `test_bayes_harness_h11_h13.py` — ports MVP `forward_probe_gap_session_harness_questions.json` h11/h12/h13 conversational probes as kernel-level artifact assertions; symmetric `to_dict`/`from_dict` round-trip + asymmetric `to_handoff_block` shape verification
+- Determinism test: two runs on the same fixture produce bit-identical UCs (the §10 replicator-friendly invariant)
+
+**Verification:** 61/61 tests passing (35 prior + 26 new); 0 lint errors; `from cinder.bayes import bayesian_update_uc, load_graph` smoke test produces `flare_30d: point=0.20, band=(0.041, 0.4291), conf=moderate (0.612), spec_hash=uc_9cd77d1becd57da7` against the real-EHR fixture under weak priors (no MKG DSN set, expected pre-Phase-6 behavior).
+
+### 4.B — Open schemas (`schemas/`)
 
 **Reused from MVP** (vendored or schema-aligned):
 - UC bundle structure already exists at `server/eoh/uc.py` (`uc.v1.bayes` schema). CINDER adopts it directly via `to_handoff_block()` and `to_legacy_annotation()` round-trips.
@@ -334,7 +353,7 @@ The simulation generates synthetic patient-wave data, runs the per-patient layer
 - `escalation_event.schema.json` — §4.5 categorized escalation event with M6 arbitration metadata
 - All schemas validate against the 5-patient + 632-event fixtures via CI
 
-### 4.B — CINDER-tuned likelihood specs (`analysis/detection/`)
+### 4.C — CINDER-tuned likelihood specs (`analysis/detection/`)
 
 The MVP `DEFAULT_LIKELIHOOD_SPECS["flare_30d"]` is a working draft, but its thresholds don't exactly match CINDER §4.4. Tighten them for the CINDER detection layer:
 
@@ -347,7 +366,7 @@ The MVP `DEFAULT_LIKELIHOOD_SPECS["flare_30d"]` is a working draft, but its thre
 
 Deliverable: `analysis/detection/cinder_likelihood_spec.yaml` — the canonical CINDER `flare_30d` likelihood spec with §4.4 thresholds verbatim, plus the §4.4 RAPID3-overlap clarification (RAPID3 evaluated as composite, not double-counted with HAQ-II / Pain VAS / Patient Global VAS components). Versioned (`spec_hash` deterministic), and included in every flareEvent's `basis` field via the existing `bayes.py` machinery.
 
-### 4.C — Comparator matching rule (`analysis/matching_rule/`) — net-new
+### 4.D — Comparator matching rule (`analysis/matching_rule/`) — net-new
 
 These don't exist in the MVP; they are CINDER-specific:
 - `matcher.py` — implements §4.6: unit of analysis, ±90-day window, 1:1 matching, tie-breaking on Stack Level then temporal proximity, unmatched event accounting
@@ -355,14 +374,14 @@ These don't exist in the MVP; they are CINDER-specific:
 - `mollard_comparator.py` — Mollard 2026 smartphone signature alignment: daily-granularity timestamps collapsed to nearest semi-annual FORWARD wave
 - Tests: synthetic exemplar produces expected flareEvent records under each comparator
 
-### 4.D — Per-patient detection orchestration (`analysis/detection/`)
+### 4.E — Per-patient detection orchestration (`analysis/detection/`)
 
 Reuses `bayes.py::bayesian_update_uc` and the MKG-prior lookup pattern from MVP. New CINDER-specific glue:
 - `detect_flare.py` — for each patient × wave: assemble working set from `M2 baseline → M3 stability bands → M6 escalation`, call `bayesian_update_uc(gh, hypothesis_id="flare_30d", evidence_event_ids=working_set, prior=mkg_prior or weak_default, likelihood_spec=cinder_v3_spec)`, collect UC; this is the equivalent of the MVP `_bayes_phase` but as a batch driver for validation rather than a chatbot phase
 - `forward_priors.py` — adapter that calls `fetch_mkg_bayes_prior(hypothesis_id="flare_30d", cohort_strata={icd_family, age_band, sex})` against a CINDER-specific priors table (`public.cinder_bayes_priors` or sidecar JSON), with weak `Beta(2,8)` fallback per strategy doc §6 phase 1
 - The MVP's `_bayes_gate` 8B classifier is **not** ported — CINDER batch validation runs every wave through the kernel deterministically, no LLM gate
 
-### 4.E — Population concordance analysis (`analysis/bayesian_concordance/`) — PyMC layer
+### 4.F — Population concordance analysis (`analysis/bayesian_concordance/`) — PyMC layer
 
 This is the §4.8 primary analysis surface; it runs *on top of* the per-patient flareEvent records produced by Phase 4.D. PyMC, not closed-form (the inference target is hierarchical kappa with patient random effects):
 - `model.py` — §4.8 hierarchical model with patient-level random effects on detection concordance; outcome = agreement between flareEvent records and clinician-rated flares; Cohen's kappa, sensitivity, specificity, PPV, NPV with 95% posterior credible intervals; weakly informative priors anchored on Mollard 2026 + 50% expansion; posterior predictive checks
@@ -371,7 +390,7 @@ This is the §4.8 primary analysis surface; it runs *on top of* the per-patient 
 - `sensitivity_window.py` — Sensitivity Analysis 3: ±60-day and ±120-day window robustness checks
 - All four runnable on the synthetic exemplar with deterministic seeds
 
-### 4.F — Aim 2 UC analyses (`analysis/uc_aim2/`)
+### 4.G — Aim 2 UC analyses (`analysis/uc_aim2/`)
 
 Reuses the `UncertaintyCarrier.posterior_params` and `band_90` fields directly from the per-patient kernel output:
 - `anticipation.py` — H2.1: proportion of confirmed flares preceded by UC widening in prior K=2 waves vs stable-window null. UC widening = `band_90` width increase > 20% vs patient's stable-window mean width (per §4.7).
@@ -379,11 +398,11 @@ Reuses the `UncertaintyCarrier.posterior_params` and `band_90` fields directly f
 - `suppression.py` — H2.3: proportion of stable windows with no UC widening vs flare-preceding-window null
 - Each uses the §4.7 numerical thresholds verbatim (K=2 waves, ≥ 50% missingness, > 20% relative posterior width increase)
 
-### 4.G — Recurrent events (`analysis/recurrent_events/`)
+### 4.H — Recurrent events (`analysis/recurrent_events/`)
 - `episode_classifier.py` — §4.10: inter-flare interval > 90 days → independent event; within 90 days of confirmed flare → continuation of episode
 - Reports recurrence interval, episode duration, independent flare count per patient
 
-### 4.H — Test harness for the vendored Bayesian layer
+### 4.I — Test harness for the vendored Bayesian layer
 
 The MVP ships two overlapping harness test surfaces. CINDER inherits them both and adds CINDER-specific extensions.
 

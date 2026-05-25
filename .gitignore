@@ -12,6 +12,14 @@
 NormanEricRoberts*
 *decrypted*
 
+# --- Vendoring scratch ---
+# The .vendoring_workspace/ directory is used as an extraction landing zone
+# when re-vendoring `cinder.bayes` from `2ndOpinionMD-MVP` (see
+# `cinder/bayes/PROVENANCE.md` for the procedure). It holds working copies
+# at the source pin that get diffed against the in-repo copies, then
+# discarded. Never commit it.
+.vendoring_workspace/
+
 # --- Python ---
 __pycache__/
 *.py[cod]

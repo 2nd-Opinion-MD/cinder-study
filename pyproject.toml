@@ -78,6 +78,15 @@ target-version = "py311"
 extend-exclude = [
     "fixtures",
     "**/*.ipynb_checkpoints",
+    # Vendored-verbatim from 2ndOpinionMD-MVP@00eaa9eb. Preserved byte-faithful so
+    # the locked-pin re-vendoring procedure (cinder/bayes/PROVENANCE.md) stays
+    # mechanical. Lint cleanups would diverge from the source pin.
+    "cinder/bayes/uc.py",
+    "cinder/bayes/graph.py",
+    "cinder/bayes/kernels.py",
+    # Vendored test inputs from MVP@00eaa9eb (harness JSON files used by
+    # tests/regression/test_bayes_harness_*.py — same byte-faithful policy).
+    "tests/regression/fixtures",
 ]
 
 [tool.ruff.lint]
@@ -100,7 +109,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["B011"]
+"tests/**" = ["B011", "N802"]  # statistical convention names + assert-on-True convention
 "analysis/**" = ["N802"]  # statistical convention names (e.g. PPV, NPV)
 
 # --------------------------------------------------------------------------- #
