@@ -1,0 +1,3 @@
+patient_id,sex,ra_seropositivity,ra_diagnosis_date
+FWD-MOCK-001,F,seropositive,2019-03-12
+FWD-MOCK-002,M,seronegative,2020-11-08

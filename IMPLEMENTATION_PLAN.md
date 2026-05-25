@@ -340,6 +340,26 @@ Vendored from `2ndOpinionMD-MVP` at locked commit `00eaa9eb` per the "Decisions 
 
 **Verification:** 61/61 tests passing (35 prior + 26 new); 0 lint errors; `from cinder.bayes import bayesian_update_uc, load_graph` smoke test produces `flare_30d: point=0.20, band=(0.041, 0.4291), conf=moderate (0.612), spec_hash=uc_9cd77d1becd57da7` against the real-EHR fixture under weak priors (no MKG DSN set, expected pre-Phase-6 behavior).
 
+### 4.A.2 — FORWARD WebQuest receiving-side adapter (stub) — ✅ landed 2026-05-25
+
+Receiving-side adapter that converts a FORWARD WebQuest semi-annual wave export (three CSVs: PRO long-form, medications, demographics) into a per-patient PTV record validating against `schemas/ptv_input.schema.json`. Built today against synthetic mock data so the 2026-05-26 1pm CDT call with Adam Cornish has a concrete artifact to point at: *"here's the adapter, you tell us your column names and we point it at them by Wednesday."*
+
+- `cinder/ingest/__init__.py` — package marker; documents the per-adapter contract (`adapter(...) -> {patient_id: ptv_record}` with audited `metadata.pii_scrubbed`).
+- `cinder/ingest/forward_webquest_adapter.py` — public surface: `ForwardFieldSpec` (column-name mapping, defaults are placeholders pending Adam's confirmation), `forward_export_to_ptv_records()` (DataFrame -> dict of PTVs), `load_forward_wave_csvs()` (CSVs -> dict of PTVs), `patient_uuid_for()` (deterministic UUID5 from FORWARD native id), and a `python -m` CLI for end-to-end runs against any CSV triple.
+- `tests/unit/fixtures/forward_mock_wave/` — synthetic mock: 2 patients × 4 semi-annual waves × the four §4.4 PRO instruments (HAQ-II, PainVAS, PatientGlobalVAS, RAPID3), 5 medication records spanning oral and parenteral routes, demographics with sex / RA seropositivity / RA diagnosis date.
+- `tests/unit/test_forward_webquest_adapter.py` — 15 tests: namespace pinning, deterministic UUID, byte-determinism modulo `built_at`, schema validation per emitted PTV, PII-scrubbed shape that satisfies the tripwire, `cinder_pro` block on every PRO event, RxNorm + route propagation, instruments-present + wave-date-range metadata summary, demographics propagation with DOB redaction, the Wednesday-after-Tuesday field-spec swap motion (renamed columns absorbed via `ForwardFieldSpec(...)`), instrument-name normalization (case variations), malformed-row drop policy.
+
+**Determinism contract:**
+- Patient UUIDs minted via `uuid.uuid5(NAMESPACE_FORWARD, native_id)` with a pinned namespace (`9c0f7e4a-5b3e-4a8b-9d2f-7e6a8c5b3e4a`); same FORWARD native ID always produces the same UUID across machines.
+- Event IDs are `ev_<sha256[:16]>` over `(patient_uuid, event_kind, instrument-or-drug, wave_number, date)`.
+- Two runs on the same input CSVs produce byte-identical PTVs except for `built_at` (UTC ISO timestamp).
+
+**Out of scope for the stub** (deliberately deferred to Phase 4.E real-FORWARD ingest): §4.5 maintenance-vs-rescue corticosteroid state machine, §4.4 baseline establishment / Δ-from-baseline (`cinder_pro.delta_from_baseline` and `cinder_pro.exceeds_band` are emitted as `null` until M2/M3 land), Postgres / Parquet warehouse connectivity, Mollard smartphone signature ingest, clinician-rated comparator events.
+
+**Verification:** 76/76 tests passing (61 prior + 15 new); 0 lint errors; CLI smoke test against the mock fixtures emits two valid PTVs (23 + 22 events respectively, 4 waves each) into `build/forward_demo_ptvs/` that pass `scripts/validate_schemas.py` dispatch.
+
+**Wednesday motion (2026-05-27):** instantiate `ForwardFieldSpec(...)` with Adam's confirmed column names; same code path absorbs the real wave with no API change.
+
 ### 4.B — Open schemas (`schemas/`)
 
 **Reused from MVP** (vendored or schema-aligned):

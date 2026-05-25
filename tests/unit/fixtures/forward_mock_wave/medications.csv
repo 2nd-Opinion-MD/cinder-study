@@ -1,0 +1,6 @@
+patient_id,drug_name,rxnorm,dose,dose_unit,route,start_date,stop_date
+FWD-MOCK-001,methotrexate,6851,15,mg,oral,2023-11-04,
+FWD-MOCK-001,prednisone,8640,10,mg,oral,2024-08-02,2024-09-15
+FWD-MOCK-001,adalimumab,327361,40,mg,parenteral,2025-01-25,
+FWD-MOCK-002,hydroxychloroquine,5521,400,mg,oral,2023-09-12,
+FWD-MOCK-002,sulfasalazine,9524,1000,mg,oral,2024-06-01,
