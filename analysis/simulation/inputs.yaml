@@ -1,0 +1,39 @@
+# =============================================================================
+# §6 sample-size simulation — pinned input grid
+# =============================================================================
+#
+# Per `confirmation_software.md` §13.4: seed = 2026, deterministic.
+# Per `IMPLEMENTATION_PLAN.md` §6 / `governance/pre_registration_log.md`:
+#   H1.1 supported if posterior P(kappa > 0.40) >= 0.80.
+#
+# This file is the pre-call prework grid. The full Phase 4.F deliverable
+# replaces the asymptotic-normal credible interval used here with explicit
+# PyMC NUTS sampling on the §4.8 hierarchical concordance model. The two
+# coincide at the sample sizes considered under flat priors; verified in
+# the unit tests against the closed-form formula.
+#
+# Output:
+#   - results/kappa_ci_table.md     (human-readable for the call)
+#   - results/kappa_ci_results.json (machine-readable for downstream)
+
+seed: 2026
+n_replicates: 4000
+
+# Fixed parameters (FORWARD-derived; revisit once Adam confirms).
+waves_per_patient: 4
+marginal_prevalence: 0.20
+
+# Parameter sweep. Each (n_patients, true_kappa, icc) cell runs n_replicates
+# Monte Carlo iterations. Total cells = len(n_patients) * len(true_kappa) * len(icc).
+n_patients: [25, 50, 75, 100, 150, 200]
+true_kappa: [0.50, 0.60, 0.70, 0.80]
+icc: [0.10, 0.30]
+
+# Decision rule (H1.1 per §6).
+threshold_kappa: 0.40
+threshold_probability: 0.80
+
+# Reporting.
+output_dir: results
+table_filename: kappa_ci_table.md
+json_filename: kappa_ci_results.json

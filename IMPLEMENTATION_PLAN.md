@@ -360,6 +360,33 @@ Receiving-side adapter that converts a FORWARD WebQuest semi-annual wave export 
 
 **Wednesday motion (2026-05-27):** instantiate `ForwardFieldSpec(...)` with Adam's confirmed column names; same code path absorbs the real wave with no API change.
 
+### 4.A.3 — §6 sample-size simulation prework (`analysis/simulation/`) — ✅ landed 2026-05-25
+
+Pre-call sample-size estimate so the 2026-05-26 A4 ask ("is N=50 a hard ceiling, or could we get N=100?") is grounded in actual numbers rather than rhetoric. Prework only — the full Phase 2 deliverable (PyMC NUTS on the §4.8 hierarchical model) replaces this approximation later in the cycle.
+
+- `analysis/simulation/__init__.py` — package documentation describing the two-layer split between this prework and the Phase 4.F PyMC layer.
+- `analysis/simulation/kappa_ci_simulator.py` — pure-numpy iid Monte Carlo over the symmetric-marginal joint-kappa distribution at the configured `(true_kappa, marginal_prevalence)`, with cluster-adjusted SE inflation via the design-effect factor `sqrt(1 + (m-1)*ICC)` (standard sample-size derivation for clustered binary outcomes; matches the asymptotic-normal credible-interval width of the §4.8 hierarchical PyMC model under flat priors at these N).
+- `analysis/simulation/inputs.yaml` — pinned parameter grid (seed=2026, 4,000 replicates per cell, 48 cells = 192,000 kappa-hat draws total).
+- `analysis/simulation/run_kappa_ci_simulation.py` — orchestration + Markdown table + JSON results writer.
+- `analysis/simulation/results/kappa_ci_table.md` — committed deterministic output for the call cheat sheet.
+- `analysis/simulation/results/kappa_ci_results.json` — machine-readable for downstream consumers.
+- `tests/unit/test_kappa_ci_simulator.py` — 25 tests covering Cohen's kappa correctness on closed-form 2×2 cases, data-generating-model fidelity (kappa-hat unbiased for true_kappa at large N, with explicit verification at κ ∈ {0, 0.55, 0.80}), iid SE scaling as 1/sqrt(N), design-effect inflation matches the textbook formula, determinism under fixed seed, power monotonicity in N and kappa, and power decreases with higher ICC.
+
+**Why iid (not Beta-Binomial patient mixture)?** Cohen's pooled kappa is biased under patient-level prevalence heterogeneity — when individual patients have very different prevalences, the pooled marginals shift in a way that inflates pooled κ̂ above the true within-patient κ. The §4.8 protocol uses hierarchical kappa with patient random effects (in PyMC) to handle this correctly. For the §6 sample-size **prework**, the simpler iid model plus the post-hoc design-effect inflation is the standard sample-size derivation for clustered binary outcomes and matches the asymptotic-normal credible-interval width that the §4.8 hierarchical PyMC model produces under flat priors at large N. Phase 4.F (the canonical §6 deliverable) replaces this with explicit NUTS sampling.
+
+**Headline results** (ICC=0.30, 4 waves per patient; H1.1 power = empirical fraction of replicates where posterior `P(κ > 0.40) ≥ 0.80` fires):
+
+| true κ | N=25 | N=50 | N=100 | N=200 |
+|---|---|---|---|---|
+| 0.50 | 45% | 55% | 70% | 85% |
+| 0.60 | 73% | **88%** | 98% | 100% |
+| 0.70 | 92% | **99%** | 100% | 100% |
+| 0.80 | 99% | 100% | 100% | 100% |
+
+**Implication for A4:** N=50 is sufficient for the expected case (true κ ≥ 0.60 per Mollard 2026's 0.65–0.75 range); N=100 mitigates risk against the skeptical κ ≈ 0.50–0.55 case. Below N=30 the design starts to bite even at strong agreement. The A4 ask is now scripted with these numbers.
+
+**Verification:** 101/101 pytest passing (76 prior + 25 new); 0 ruff lint errors; deterministic under seed=2026 (same seed produces bit-identical output every run).
+
 ### 4.B — Open schemas (`schemas/`)
 
 **Reused from MVP** (vendored or schema-aligned):

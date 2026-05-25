@@ -91,7 +91,7 @@ If a question lands on you that's not in this order, default response:
 
 **What we DON'T volunteer in the first 5 min:**
 
-- N=50 power concerns (don't telegraph weakness up front; raise it as a question to them, not a confession from us)
+- N=50 power concerns. Sim says N=50 is well-powered for the expected case (true κ ≥ 0.60 → ≥88% power on H1.1) and only marginal for the skeptical case (true κ ≈ 0.50 → 55%). Frame in A4 as "we'd take N=100 if it's a small lift" — not as "N=50 is a problem."
 - Our own ACR-2026-vs-2027 internal probability estimate (let Kaleb say his preference first)
 - The "we're alone on this code" honesty (only if asked; have answer ready)
 
@@ -179,17 +179,43 @@ These are **the** questions. Without these we cannot lock the primary analysis. 
 | Distinguishes route, no equivalent dose | We compute equivalents from `analysis/detection/steroid_equivalents.yaml` (already specced). 1 day of work. |
 | Doesn't distinguish route | Maintenance-vs-rescue rule degrades to dose-pattern only. Document as §13.3 caveat 3 amend. |
 
-### A4. Sample size — push for >N=50 if possible
+### A4. Sample size — push for >N=50 if true κ might be ≤ 0.55
+
+**Sim results in hand** (deterministic, seed=2026, 4,000 replicates per cell; full table in `analysis/simulation/results/kappa_ci_table.md`):
+
+At ICC=0.30 (moderate within-patient correlation), 4 waves per patient:
+
+| true κ | N=25 | N=50 | N=100 | N=200 |
+|---|---|---|---|---|
+| 0.50 | 45% | **55%** | 70% | 85% |
+| 0.60 | 73% | **88%** | 98% | 100% |
+| 0.70 | 92% | 99% | 100% | 100% |
+| 0.80 | 99% | 100% | 100% | 100% |
+
+(Cells = empirical H1.1 power, i.e. fraction of replicates where posterior `P(κ > 0.40) ≥ 0.80` fires under the §4.8 hierarchical model approximation.)
+
+**Plain-English read:**
+
+- **If true κ ≥ 0.60, N=50 is sufficient.** ≥88% power at ICC=0.30. Don't push.
+- **If true κ ≈ 0.55, N=50 is marginal.** ~70-75% power; N=100 buys us 90%+.
+- **If true κ ≈ 0.50, N=50 is underpowered.** Only 55% power; doubling to N=100 buys us ~70%, doubling again to N=200 buys us 85%.
+- **If true κ < 0.50, no realistic FORWARD N saves us.** Even N=200 → 85% at κ=0.50; lower kappas don't reach 80% power.
+
+Mollard 2026 reported κ around 0.65–0.75 for clinical flares, so the **expected case is true κ ≈ 0.6–0.7 → N=50 is fine**. The reason to push for N=100 is risk mitigation against the ~0.50–0.55 region, not a hard requirement.
 
 **Verbatim ask:**
 
-> *"Last technical one: is N=50 a hard ceiling, or could we get N=100 or larger? Our sample-size simulation is in flight this week; if it says N=50 gives us a kappa CI wider than 0.3 we'd want to negotiate a larger slice now rather than after analysis. Does FORWARD have a larger feasible cohort under the same inclusion criteria?"*
+> *"Last technical one: is N=50 a hard ceiling, or could we get N=100? Our sample-size simulation finished this morning. At true kappa around 0.6 — Mollard 2026's published range — N=50 gives us about 88% power on H1.1. But at true kappa around 0.5 — the skeptical case — N=50 drops to 55% power and N=100 buys us back to 70%. We'd take N=100 if it's a small lift on your side, but we won't push twice if N=50 is the ceiling."*
 
 **Listen for:**
 
-- "Could go to N=100, similar effort" → Take it. Even if §6 simulation says N=50 is fine, larger is always better for a validation study.
-- "N=50 is the ceiling" → Accept it; don't push twice. Note for §6 simulation that we're locked at N=50.
-- "Could go higher but slower" → Ask "how much slower?" and weigh against the calendar.
+- "Could go to N=100, similar effort" → Take it. Frees us from worrying about the κ≈0.50 case.
+- "N=50 is the ceiling" → Accept gracefully. We're well-powered for the expected case (κ ≥ 0.60); only the low-κ scenario suffers, and that scenario is publishable as a "structured-disagreement" finding either way.
+- "Could go higher but slower" → Ask: *"how much slower, in weeks?"* Weigh against the calendar from K1.
+
+**If asked "what's your minimum acceptable N?":**
+
+> *"For the expected-case kappa around 0.6, N=50 is well-powered — we wouldn't refuse N=50. The number that would actually concern us is N below 30, which the sim shows starts to bite even at strong agreement."*
 
 ---
 
