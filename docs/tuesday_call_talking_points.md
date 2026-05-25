@@ -16,15 +16,23 @@ related:
 
 **Who:**
 
-| Person | Role | Track to drive |
+| Person | Role | Track |
 |---|---|---|
-| Andras Hangyal | 2OPMD co-PI | Opens; runs Rebecca/Kaleb tracks |
-| Dylan McCapes | Pipeline architect | Runs Adam track; closes the technical decisions |
-| Kaleb | FORWARD/UNMC, prospective lead author | ACR target + comparator availability |
-| Adam Cornish | Head of IT, UNMC | Data format, delivery date, field availability |
-| Rebecca Schumacher | Executive Director | Publication policy, authorship governance |
+| Andras Hangyal | 2OPMD co-PI | Opens the call; runs the Kaleb (ACR target) and Rebecca (governance) tracks; absorbs any diplomatic moments |
+| Dylan McCapes | Pipeline architect | **Technical lead.** Owns every Adam-facing question (format, delivery, fields, sample size). Stays scripted. |
+| Kaleb | FORWARD/UNMC, prospective lead author | Their side: ACR target + comparator availability |
+| Adam Cornish | Head of IT, UNMC | Their side: data format, delivery date, field availability |
+| Rebecca Schumacher | Executive Director | Their side: publication policy, authorship governance |
 
 **Total speaking time you actually get** (rough): ~7–10 min for our questions, ~7–10 min for theirs, ~10 min for cross-discussion. **Optimize ruthlessly.** You will not get to everything.
+
+### Dylan's posture (read this twice)
+
+- **Stick to the script verbatim.** The asks below are written word-for-word for a reason. Don't paraphrase.
+- **Don't improvise.** If a question lands outside the script, defer in writing: *"Good question — we'll send a written follow-up by EOD."* You don't need to answer it live.
+- **Don't dominate.** Ask the technical question, capture the answer, move to the next bullet. If a thread starts to run long, hand it back: *"Andras, anything to add on that before we move on?"*
+- **Don't oversell.** When asked about state, use the canonical line below. Don't expand it under conversational pressure.
+- **If it's not in this doc, you're not committing to it on the call.** Period.
 
 ---
 
@@ -42,6 +50,32 @@ If the call ends and we have these three, the call was a success. Everything els
 
 ---
 
+## Dylan's ask order (one-page reference for live use)
+
+Read these in order. Don't reorder, don't combine, don't skip. Each ask has its full branch logic in the section below.
+
+1. **A1 — Delivery date.** *"What's your realistic ship date for the N=50 slice? Not the optimistic date — the date you'd put in writing. We're working back from ACR's mid-June abstract deadline. On our side, once your data lands the full pipeline runs in under an hour, so the calendar is bounded by your date, not our analysis time."*
+
+2. **A2 — File format and shape.** *"Quick meta-question on format: Parquet, CSV, or JSON? And is it one file per wave or one aggregate export with `wave_number` + `wave_date` columns? We support all four combinations; we just need to know which one to point the adapter at. ISO 8601 dates with timezone, or native UNMC date format?"*
+
+3. **A3.1 — Clinician-rated flare flag (§13.2 caveat 1).** *"In the FORWARD wave records — is there a clinician-rated flare flag? A field where the rheumatologist marks 'this patient was flaring at this wave'? Could be Boolean, could be a free-text field with structured values. We can adapt to anything; we just need to know if it's there."*
+
+4. **A3.2 — Mollard subgroup (§13.2 caveat 2).** *"How many of your N=50 patients have Mollard 2026 smartphone-signature data? We need ≥10 to have a defensible Mollard comparator branch; below that we drop it as a sensitivity analysis only."*
+
+5. **A3.3 — Patient Global VAS coverage + corticosteroid resolution (§13.3).** *"Two field-coverage questions for the OMERACT comparator. One: is Patient Global VAS captured in raw 0–100 form on every wave, or only when patients trigger it? Two: do your medication records distinguish oral corticosteroids from parenteral, and if so, is there a prednisone-equivalent dose computed somewhere upstream — or do we compute it ourselves from the raw drug + dose?"*
+
+6. **A4 — Sample size negotiation.** *"Last technical one: is N=50 a hard ceiling, or could we get N=100 or larger? Our sample-size simulation is in flight this week; if it says N=50 gives us a kappa CI wider than 0.3 we'd want to negotiate a larger slice now rather than after analysis. Does FORWARD have a larger feasible cohort under the same inclusion criteria?"*
+
+After A4, hand back to Andras for the K1 (ACR target) and Rebecca tracks. **Stop driving.**
+
+If something runs long, the priority order for what to drop is: A4 → A3.2 → A2 (last-line defaults). Never drop A1 or A3.1 or A3.3.
+
+If a question lands on you that's not in this order, default response:
+
+> *"Good question — let me send a written follow-up by EOD rather than answer that off-the-cuff."*
+
+---
+
 ## Opening posture (first 5 minutes)
 
 **What Andras leads with** (suggested):
@@ -53,6 +87,7 @@ If the call ends and we have these three, the call was a success. Everything els
 - We are **further along** than they may expect. Pipeline runs end-to-end today. Bayes layer vendored. Schema + PII tripwire enforcing.
 - We are **pre-registered**, which is uncommon for ACR submissions and is a credibility multiplier we should mention.
 - We have **three branchable comparator paths**, all pre-registered. Not one fragile primary analysis.
+- **The full pipeline is deterministic and fast.** Once column names are confirmed, ingestion + Bayesian processing of the full N=50 batch is realistically under an hour. No slow local-model inference loop. This means the calendar is bounded by Adam's ship date, not by our compute time.
 
 **What we DON'T volunteer in the first 5 min:**
 
@@ -70,17 +105,17 @@ If the call ends and we have these three, the call was a success. Everything els
 
 **Verbatim ask:**
 
-> *"What's your realistic ship date for the N=50 slice? Not the optimistic date — the date you'd put in writing. We're working back from ACR's mid-June abstract deadline."*
+> *"What's your realistic ship date for the N=50 slice? Not the optimistic date — the date you'd put in writing. We're working back from ACR's mid-June abstract deadline. On our side, once your data lands the full pipeline runs in under an hour, so the calendar is bounded by your date, not our analysis time."*
 
 **Listen for:**
 
 - "First week of June" → ACR 2026 is live. Lock it down with a calendar invite for the handoff.
-- "Mid-to-late June" → ACR 2026 is at risk. Pivot to "what would it take to get a 5-patient pilot slice this week so we de-risk the pipeline?"
+- "Mid-to-late June" → ACR 2026 is at risk. Pivot to the pilot-slice ask below.
 - "Early July or later" → ACR 2026 is realistically gone. Pivot to the methods-only ACR 2026 abstract OR ACR 2027 framing. Don't argue, just acknowledge.
 
-**Follow-up if the date slips past mid-June:**
+**Follow-up if the date slips past mid-June** (this is your most important secondary ask):
 
-> *"Would a small pilot slice (5 patients, any waves) earlier in June be feasible? It de-risks our pipeline so when the full N=50 lands we're not debugging plumbing, we're producing numbers."*
+> *"Would a small pilot slice — five patients, any waves, even one wave — be feasible to ship this week or next? It lets us validate the adapter against your real column names before the full N=50 arrives, so when the full slice lands we're producing numbers, not debugging plumbing. Given our deterministic pipeline, a five-patient pilot run-through is a couple of hours of our time."*
 
 ### A2. File format and shape
 
@@ -306,19 +341,25 @@ Each "amend" path is **already pre-registered as a branch** — these aren't sur
 
 ## The receiving-side state — what to say if asked
 
-If anyone asks about our readiness, the canonical line:
+If anyone asks about our readiness, the canonical line (memorize):
 
-> *"Repository scaffold is landed. PTV input contract is published with the 632-event real-EHR reference fixture validated against it. PII tripwire enforces on every commit and every CI run. The Bayesian kernel layer is vendored from our internal codebase at a pinned commit (Phase 4.A, landed Monday). The FORWARD WebQuest adapter is running end-to-end against synthetic mock data and emitting schema-validated PTVs (Phase 4.A.2, also landed Monday). Pointing it at your real column names is a one-place change — instantiate one Python dataclass with Adam's confirmed names and the same code path absorbs the real wave."*
+> *"Repository scaffold is landed. PTV input contract is published with the 632-event real-EHR reference fixture validated against it. PII tripwire enforces on every commit and every CI run. The Bayesian kernel layer is vendored from our internal codebase at a pinned commit (Phase 4.A, landed Monday). The FORWARD WebQuest adapter is running end-to-end against synthetic mock data and emitting schema-validated PTVs (Phase 4.A.2, also landed Monday). Pointing it at your real column names is a one-place change — instantiate one Python dataclass with Adam's confirmed names and the same code path absorbs the real wave. The full pipeline is deterministic; once column names are confirmed, ingesting and Bayesian-processing the full N=50 batch is realistically under an hour."*
+
+If asked specifically about analysis turnaround time:
+
+> *"It's deterministic Bayesian conjugate inference plus a hierarchical PyMC concordance model — no local LLM, no slow inference loop. Realistically under an hour for the full N=50 batch from CSV-in to UC-out, on a workstation. The bottleneck is Adam's ship date, not our compute."*
+
+(This is your strongest factual claim during the call. Use it sparingly — once when stating the canonical line, once if directly asked. Don't repeat it three times.)
 
 If asked about the team / who's doing the work:
 
-> *"Dylan is the pipeline architect. Andras is co-PI and reviews the methodology. Kaleb is prospective lead author. The codebase is open, replicable, and pre-registered, which means we're set up so that if a reviewer or replicator wants to verify any analytic decision, they can rerun the entire pipeline deterministically from the public repo."*
+> *"Dylan is the pipeline architect. Andras is co-PI and reviews the methodology. Kaleb is prospective lead author. The codebase is open, replicable, and pre-registered, which means if a reviewer or replicator wants to verify any analytic decision, they can rerun the entire pipeline deterministically from the public repo."*
 
 (Honest, concise, doesn't oversell.)
 
 If asked about Bayesian methodology rationale:
 
-> *"The Bayesian framework gives us posterior credible intervals on every flare detection — not just point estimates. That means we can report not just whether a flare was detected, but with what confidence, and we can detect uncertainty widening in advance of clinical confirmation. It's also the only framework where we can pre-register the prior, the likelihood, and the inference target separately and have each be auditable. Frequentist mixed-effects models are still in the pre-registered sensitivity analysis (Sensitivity Analysis 1) so reviewers who prefer that framing have a parallel result."*
+> *"The Bayesian framework gives us posterior credible intervals on every flare detection — not just point estimates. We can report not just whether a flare was detected, but with what confidence, and we can detect uncertainty widening in advance of clinical confirmation. It's also the only framework where we can pre-register the prior, the likelihood, and the inference target separately and have each be auditable. The kernel is closed-form conjugate where it can be — deterministic under a fixed seed — and PyMC NUTS for the hierarchical concordance layer. Frequentist mixed-effects models are still in the pre-registered sensitivity analysis (Sensitivity Analysis 1) so reviewers who prefer that framing have a parallel result."*
 
 ---
 
@@ -352,4 +393,4 @@ By midnight Tuesday:
 
 ## One-paragraph summary (read this last, 30 seconds before the call)
 
-The receiving side is real and runs end-to-end against synthetic data today. We need three answers from Adam (delivery date, format, three caveat-resolving fields), one answer from Kaleb (ACR target year + category), one answer from Rebecca (FORWARD review timeline + authorship structure). Every other agenda item is below the cut. Don't volunteer N=50 power concerns. Don't argue if Kaleb prefers ACR 2027. Frame any caveat that resolves "no" as activating a pre-registered fallback branch, not as a problem. Andras runs Rebecca and the opening; Dylan runs Adam and closes the technical decisions. Email recap by EOD owned by Andras.
+The receiving side is real and runs end-to-end against synthetic data today; once column names are confirmed, the full N=50 batch processes deterministically in under an hour. We need three answers from Adam (delivery date, format, three caveat-resolving fields), one from Kaleb (ACR target year + category), one from Rebecca (FORWARD review timeline + authorship structure). Every other agenda item is below the cut. Don't volunteer N=50 power concerns. Don't argue if Kaleb prefers ACR 2027. Frame any caveat that resolves "no" as activating a pre-registered fallback branch, not as a problem. **Andras opens and runs the Kaleb + Rebecca tracks; Dylan owns every technical question to Adam, scripted, no improv.** Email recap by EOD owned by Andras. If a question lands outside the script, defer to written follow-up — don't answer live.
