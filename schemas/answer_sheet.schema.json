@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://2ndopinion.md/cinder/schemas/answer_sheet.schema.json",
+  "title": "CINDER Synthetic Track-1 Answer Sheet",
+  "description": "Ground-truth scoring key emitted by cinder.synthetic; one record per patient with per-wave ground truth. Output is synthetic (provenance.synthetic === true).",
+  "type": "object",
+  "required": ["provenance", "patients"],
+  "additionalProperties": false,
+  "properties": {
+    "provenance": {
+      "type": "object",
+      "required": ["synthetic", "generator_version", "parameter_spec_version", "field_spec_hash", "seed", "ground_truth_basis"],
+      "additionalProperties": false,
+      "properties": {
+        "synthetic": {"const": true},
+        "generator_version": {"type": "string"},
+        "parameter_spec_version": {"type": "string"},
+        "field_spec_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "seed": {"type": "integer"},
+        "ground_truth_basis": {"const": "latent_true_values"}
+      }
+    },
+    "patients": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/patient"}
+    }
+  },
+  "$defs": {
+    "patient": {
+      "type": "object",
+      "required": ["patient_id", "phenotype_tier", "comorbidity_flags", "disease_activity_state", "per_wave"],
+      "additionalProperties": false,
+      "properties": {
+        "patient_id": {"type": "string"},
+        "phenotype_tier": {"enum": ["clean", "co_dominant", "masked_minority", "adversarial"]},
+        "comorbidity_flags": {
+          "type": "array",
+          "items": {"enum": ["fibromyalgia", "depression"]},
+          "uniqueItems": true
+        },
+        "disease_activity_state": {"enum": ["remission", "low", "moderate", "high"]},
+        "per_wave": {"type": "array", "items": {"$ref": "#/$defs/wave"}}
+      }
+    },
+    "wave": {
+      "type": "object",
+      "required": ["wave_number", "true_flare", "flare_class", "flare_driver", "pro_domains_shifted", "expected_M4_outcome", "expected_UC_behavior"],
+      "additionalProperties": false,
+      "properties": {
+        "wave_number": {"type": "integer", "minimum": 0},
+        "true_flare": {"type": "boolean"},
+        "flare_class": {"type": ["string", "null"], "enum": ["axiom_visible", "axiom_invisible", null]},
+        "flare_driver": {"type": ["string", "null"], "enum": ["RA_primary", "RA_codominant", "comorbidity_driven", "non_RA", null]},
+        "pro_domains_shifted": {
+          "type": "array",
+          "items": {"enum": ["HAQ-II", "PainVAS", "PatientGlobalVAS"]},
+          "uniqueItems": true
+        },
+        "escalation_event": {
+          "type": ["object", "null"],
+          "required": ["type", "route", "date", "escalation_class", "classification_confidence", "candidate_classes"],
+          "additionalProperties": false,
+          "properties": {
+            "type": {"type": "string"},
+            "route": {"enum": ["oral", "parenteral"]},
+            "date": {"type": ["string", "null"]},
+            "escalation_class": {
+              "enum": ["gc_rescue_burst", "gc_bridge_initiation", "dose_increase", "gc_maintenance", "gc_taper", "dmard_initiation", "therapy_switch"]
+            },
+            "classification_confidence": {"enum": ["high", "low"]},
+            "candidate_classes": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "expected_M4_outcome": {"type": ["string", "null"], "enum": ["should_detect", "should_miss_by_design", "axiom_invisible", null]},
+        "expected_UC_behavior": {"type": ["string", "null"], "enum": ["stable", "widen", "flag_discordance", "refuse", null]},
+        "miss_reason": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
