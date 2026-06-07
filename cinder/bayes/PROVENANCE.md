@@ -85,7 +85,7 @@ and the kernel falls back to the weak priors documented in
 | `taper_safety` | Beta(6.0, 4.0) | 0.60 |
 
 These are the priors the §6.1 sample-size simulation runs against per protocol
-§4.8 (and per Aetherion Major 5 review note: priors are weakly informative,
+§4.8 (and per external Major 5 review note: priors are weakly informative,
 anchored on Mollard 2026 point estimates expanded by 50 percent to allow data
 dominance). Switching to MKG-informed priors post-Phase-6 is a configuration
 change (set `CINDER_MKG_DSN`, populate `public.mkg_bayes_priors`), not a
