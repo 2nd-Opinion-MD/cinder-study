@@ -1,0 +1,54 @@
+{
+  "provenance": {
+    "generator": "cinder.synthetic",
+    "n_patients": 1000,
+    "seed": 42,
+    "data_type": "SYNTHETIC (literature-parameterized)"
+  },
+  "cohort": {
+    "n_patients": 1000,
+    "n_patient_waves": 5914,
+    "n_true_flares": 1452,
+    "n_comorbid_patients": 299,
+    "comorbid_fraction": 0.299
+  },
+  "inter_pro_correlation": {
+    "pain_vs_pga": 0.82,
+    "pga_vs_haq": 0.703,
+    "pain_vs_haq": 0.716,
+    "targets": {
+      "pain_vs_pga": 0.7,
+      "pga_vs_haq": 0.64
+    }
+  },
+  "test_retest_proxy": {
+    "HAQ-II": {
+      "n_pairs": 2043,
+      "retest_r": 0.704
+    },
+    "PainVAS": {
+      "n_pairs": 2043,
+      "retest_r": 0.638
+    },
+    "PatientGlobalVAS": {
+      "n_pairs": 2043,
+      "retest_r": 0.62
+    },
+    "RAPID3": {
+      "n_pairs": 2043,
+      "retest_r": 0.742
+    }
+  },
+  "flare_gap": {
+    "n_true_flares": 1452,
+    "n_axiom_invisible": 496,
+    "axiom_invisible_fraction": 0.342,
+    "designed_target_range": [
+      0.3,
+      0.4
+    ]
+  },
+  "comorbidity_false_positives": {
+    "n_comorbidity_driven_waves": 553
+  }
+}
