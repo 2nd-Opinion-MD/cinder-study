@@ -108,7 +108,7 @@ cinder-study/
     ├── confirmation_matching_rule.md   ← §13 item 4.6.a
     ├── confirmation_omeract.md         ← §13 item 4.6.b
     ├── confirmation_software.md        ← §13 item 4.8
-    └── aetherion_response_log.md       ← optional v4-candidate edit queue
+    └── review_response_log.md          ← optional v4-candidate edit queue
 ```
 
 Module-internal logic for M2 / M3 / M6 / M9 / M62 / M63 is **not** in this repo. The schemas describe the *contract surfaces* (inputs/outputs); the proprietary package satisfies them.
@@ -641,7 +641,7 @@ The MVP hypotheses work on single-patient PTV graphs; CINDER needs batch-validat
 ### Pre-registration discipline (§9.5)
 The v3.0-FINAL commit hash (Phase 3) is the pre-registration anchor. After tagging:
 - No retroactive edits to hypotheses, decision rules, primary analysis specification, or comparator matching rule
-- Any v4-candidate edits surfaced post-tag go into `docs/aetherion_response_log.md` as v4 candidates per the handoff guidance, **not** as silent v3 patches
+- Any v4-candidate edits surfaced post-tag go into `docs/review_response_log.md` as v4 candidates per the handoff guidance, **not** as silent v3 patches
 - The `governance/pre_registration_log.md` is the authoritative timestamp record
 
 ### Reproducibility commitment (§10)

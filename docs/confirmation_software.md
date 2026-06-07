@@ -24,7 +24,7 @@ This memo also pins three implementation choices §4.8 leaves under-specified: s
 
 ### Why PyMC (and not Stan)
 
-Protocol §4.8 commits explicitly: *"Software: PyMC."* This was the resolution of `Aetherion Minor 1`, which previously read "PyMC or Stan" and was tightened to "PyMC" before the v3 freeze. The decision is recorded in the v3 audit trail: changelog line 36, `"§4.8: replaced 'PyMC or Stan' with PyMC [Aetherion Minor 1]; fixed sensitivity analysis to agreement-oriented specification [Aetherion Major 5]"`.
+Protocol §4.8 commits explicitly: *"Software: PyMC."* This was the resolution of `Review Minor 1`, which previously read "PyMC or Stan" and was tightened to "PyMC" before the v3 freeze. The decision is recorded in the v3 audit trail: changelog line 36, `"§4.8: replaced 'PyMC or Stan' with PyMC [Review Minor 1]; fixed sensitivity analysis to agreement-oriented specification [Review Major 5]"`.
 
 Operational reasons that backed the decision (for future replicators reading this memo):
 
