@@ -64,10 +64,13 @@ def apply_comorbidity_offset(
     """Add the comorbidity offset to Pain/PGA struct on a subset of waves (HAQ untouched).
 
     The offset is converted from native units to structural units (divide by the channel SD)
-    so it adds the right number of VAS points after the affine map. A comorbid patient shows
-    the elevation on a random subset of waves (chronic but fluctuating distress); those waves
-    are recorded as ``comorbidity_driven`` ground truth. ``L`` and HAQ are never touched, so
-    the discordance signature is preserved and no escalation is emitted for these waves.
+    so it adds the right number of VAS points after the affine map, plus extra structural
+    volatility drawn as additive Gaussian noise with SD = ``extra_volatility - 1.0`` (in the
+    same standardized structural units; ``extra_volatility == 1.0`` adds none). A comorbid
+    patient shows the elevation on a random subset of waves (chronic but fluctuating distress);
+    those waves are recorded as ``comorbidity_driven`` ground truth. ``L`` and HAQ are never
+    touched, so the discordance signature is preserved and no escalation is emitted for these
+    waves.
     """
     if not assignment.is_comorbid:
         return
@@ -76,8 +79,10 @@ def apply_comorbidity_offset(
     elevated = [w for w in range(n) if rng.random() < 0.5]
     pain_off = params.pain_offset_mean / baseline_pain_sd
     pga_off = params.pga_offset_mean / baseline_pga_sd
+    vol_sd = params.extra_volatility - 1.0  # additive structural-noise SD (see params docstring)
     for w in elevated:
-        # Additive offset + extra volatility on Pain/PGA channels only (NOT through L, no HAQ).
-        traj.pain_struct[w] += pain_off + rng.normal(0.0, (params.extra_volatility - 1.0))
-        traj.pga_struct[w] += pga_off + rng.normal(0.0, (params.extra_volatility - 1.0))
+        # Additive offset + extra structural volatility on Pain/PGA channels only (NOT through
+        # L, no HAQ), so the Pain/PGA-up, HAQ-flat discordance signature is preserved.
+        traj.pain_struct[w] += pain_off + rng.normal(0.0, vol_sd)
+        traj.pga_struct[w] += pga_off + rng.normal(0.0, vol_sd)
     assignment.elevated_waves = elevated

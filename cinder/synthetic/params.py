@@ -110,7 +110,10 @@ class ComorbidityParams:
     depression_prevalence: float = 0.24  # 18-30%
     pain_offset_mean: float = 18.0  # additive Pain VAS elevation, no escalation
     pga_offset_mean: float = 16.0  # additive PGA elevation, no escalation
-    extra_volatility: float = 1.4  # multiplier on Pain/PGA measurement noise
+    # Extra Pain/PGA volatility on elevated waves, applied as additive Gaussian noise on the
+    # STRUCTURAL channels with SD = (extra_volatility - 1.0) in standardized units (so 1.0 = no
+    # extra volatility). NOT a multiplier on the §3 measurement-noise floor.
+    extra_volatility: float = 1.4
 
 
 @dataclass(frozen=True, slots=True)

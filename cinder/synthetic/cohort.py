@@ -72,11 +72,20 @@ def _flare_answer(
 ) -> WaveAnswer:
     """Build a flare wave's answer, re-deriving the outcome from the FINAL crossings.
 
-    A planted RA flare is ``should_detect`` only if, on the emitted trajectory, it still shows
-    >=2 PRO domains crossing MCID AND carries a linked anchor escalation AND has sufficient
-    lookback (R3). Otherwise it is an honest ``should_miss_by_design`` with the reason it could
-    not be detected: insufficient_lookback, pro_ceiling_saturation, masked_by_comorbidity, or
-    subthreshold. Invisible flares stay ``axiom_invisible`` (no escalation -> M4 silent).
+    A planted RA flare is ``should_detect`` only if it crosses >=2 PRO domains on BOTH the
+    RA-intrinsic trajectory (``fl.pro_domains_shifted``, pre-comorbidity-offset) AND the emitted
+    trajectory (``final_shifted``, post-offset), carries a linked anchor escalation, and has
+    sufficient lookback (R3). Requiring both crossings closes two failure modes symmetrically:
+
+      * comorbidity baseline elevation COMPRESSES a real >=2-domain flare below threshold on
+        the emitted trajectory -> ``masked_by_comorbidity`` (a true miss, not a labeling error);
+      * comorbidity baseline elevation MANUFACTURES an apparent >=2-domain crossing on a wave
+        whose inflammatory flare is itself subthreshold -> ``comorbidity_confounded`` (banking
+        it would be a non-inflammatory false positive, so M4 should miss by design).
+
+    Otherwise it is an honest ``should_miss_by_design`` with the reason it could not be
+    detected: insufficient_lookback, pro_ceiling_saturation, masked_by_comorbidity,
+    comorbidity_confounded, or subthreshold. Invisible flares stay ``axiom_invisible``.
     """
     if fl.flare_class == "axiom_invisible":
         return WaveAnswer(
@@ -90,14 +99,24 @@ def _flare_answer(
             miss_reason=None,
         )
     esc = fl.escalation
+    # RA-intrinsic crossings: what the flare did to the trajectory BEFORE any comorbidity
+    # offset. final_shifted is the post-offset (emitted) crossing the CSVs reflect.
+    intrinsic_shifted = fl.pro_domains_shifted
     if w < params.flares.min_lookback_wave:
         outcome, miss = "should_miss_by_design", "insufficient_lookback"
-    elif len(final_shifted) >= 2:
-        outcome, miss = "should_detect", None
+    elif len(intrinsic_shifted) >= 2:
+        # The inflammatory flare itself crosses >=2 domains; detectable UNLESS comorbidity
+        # baseline elevation has since compressed the emitted wave-to-wave delta below the line.
+        if len(final_shifted) >= 2:
+            outcome, miss = "should_detect", None
+        else:
+            outcome, miss = "should_miss_by_design", "masked_by_comorbidity"
     elif cur_true[1] >= 99.0 or cur_true[2] >= 99.0:
         outcome, miss = "should_miss_by_design", "pro_ceiling_saturation"
-    elif is_comorbid:
-        outcome, miss = "should_miss_by_design", "masked_by_comorbidity"
+    elif is_comorbid and len(final_shifted) >= 2:
+        # Apparent >=2-domain crossing is driven by non-inflammatory comorbidity elevation, not
+        # the (subthreshold) RA flare. Detecting it would be a false positive -> miss by design.
+        outcome, miss = "should_miss_by_design", "comorbidity_confounded"
     else:
         outcome, miss = "should_miss_by_design", "subthreshold"
     uc = "widen" if (esc is not None and esc.classification_confidence == "low") else "stable"

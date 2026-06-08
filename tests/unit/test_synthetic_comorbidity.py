@@ -12,15 +12,17 @@ import copy
 
 import numpy as np
 
+from cinder.synthetic.cohort import _flare_answer
 from cinder.synthetic.comorbidity import (
     apply_comorbidity_offset,
     assign_comorbidity,
 )
-from cinder.synthetic.flares import domains_shifted
+from cinder.synthetic.flares import PlantedFlare, domains_shifted
 from cinder.synthetic.instruments import map_to_instruments
 from cinder.synthetic.latent import draw_latent_trajectory
 from cinder.synthetic.params import default_params
 from cinder.synthetic.rng import CohortRNG
+from cinder.synthetic.treatment import EscalationFact
 
 N_PATIENTS = 600
 N_WAVES = 6
@@ -93,3 +95,50 @@ def test_discordance_signature_present() -> None:
             if pro_up and "HAQ-II" not in shifted:
                 discordant += 1
     assert discordant > 0, "no Pain/PGA-up, HAQ-flat discordance waves generated"
+
+
+def _visible_flare(intrinsic_shifted: list[str]) -> PlantedFlare:
+    """A visible flare whose RA-intrinsic crossing is ``intrinsic_shifted`` (high-conf anchor)."""
+    return PlantedFlare(
+        wave_number=3,
+        true_flare=True,
+        flare_class="axiom_visible",
+        flare_driver="RA_codominant",
+        expected_M4_outcome="should_detect",
+        expected_UC_behavior="stable",
+        escalation=EscalationFact("gc_rescue_burst", "high", [], "oral", "steroid_rescue"),
+        pro_domains_shifted=intrinsic_shifted,
+    )
+
+
+def test_comorbidity_cannot_manufacture_should_detect() -> None:
+    # A subthreshold RA flare (intrinsic crosses <2 domains) whose APPARENT >=2-domain crossing
+    # on the emitted trajectory is produced by non-inflammatory comorbidity elevation must be
+    # labeled should_miss_by_design / comorbidity_confounded - never should_detect.
+    params = default_params()
+    fl = _visible_flare(intrinsic_shifted=["PainVAS"])
+    ans = _flare_answer(3, fl, ["PainVAS", "PatientGlobalVAS"], (1.0, 50.0, 50.0), True, params)
+    assert ans.expected_M4_outcome == "should_miss_by_design"
+    assert ans.miss_reason == "comorbidity_confounded"
+
+
+def test_comorbidity_masking_compresses_real_flare() -> None:
+    # The symmetric case: a genuine >=2-domain RA flare whose emitted crossing is compressed
+    # below threshold by comorbidity baseline elevation -> masked_by_comorbidity (true miss).
+    params = default_params()
+    fl = _visible_flare(intrinsic_shifted=["PainVAS", "PatientGlobalVAS"])
+    ans = _flare_answer(3, fl, ["PainVAS"], (1.0, 50.0, 50.0), True, params)
+    assert ans.expected_M4_outcome == "should_miss_by_design"
+    assert ans.miss_reason == "masked_by_comorbidity"
+
+
+def test_genuine_flare_still_detects() -> None:
+    # Regression guard: a flare crossing >=2 domains on BOTH the intrinsic and emitted
+    # trajectories is still should_detect (the new gate is not over-tightened).
+    params = default_params()
+    fl = _visible_flare(intrinsic_shifted=["PainVAS", "PatientGlobalVAS"])
+    ans = _flare_answer(
+        3, fl, ["PainVAS", "PatientGlobalVAS"], (1.0, 50.0, 50.0), False, params
+    )
+    assert ans.expected_M4_outcome == "should_detect"
+    assert ans.miss_reason is None
