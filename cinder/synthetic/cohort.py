@@ -21,6 +21,7 @@ from cinder.synthetic.latent import draw_latent_trajectory
 from cinder.synthetic.params import GeneratorParams, default_params
 from cinder.synthetic.records import MedEvent, PatientRecord, PROObservation, Wave
 from cinder.synthetic.rng import CohortRNG
+from cinder.synthetic.m4_arithmetic import escalation_within_window
 from cinder.synthetic.treatment import emit_maintenance_dmard
 
 __all__ = ["generate_cohort"]
@@ -69,6 +70,7 @@ def _flare_answer(
     cur_true: tuple[float, float, float],
     is_comorbid: bool,
     params: GeneratorParams,
+    wave_date: date | None = None,
 ) -> WaveAnswer:
     """Build a flare wave's answer, re-deriving the outcome from the FINAL crossings.
 
@@ -93,7 +95,16 @@ def _flare_answer(
     if w < params.flares.min_lookback_wave:
         outcome, miss = "should_miss_by_design", "insufficient_lookback"
     elif len(final_shifted) >= 2:
-        outcome, miss = "should_detect", None
+        in_window = (
+            esc is None
+            or esc.date_ is None
+            or wave_date is None
+            or escalation_within_window(wave_date, [esc.date_])
+        )
+        if esc is not None and wave_date is not None and not in_window:
+            outcome, miss = "should_miss_by_design", "temporal_linkage_missed"
+        else:
+            outcome, miss = "should_detect", None
     elif cur_true[1] >= 99.0 or cur_true[2] >= 99.0:
         outcome, miss = "should_miss_by_design", "pro_ceiling_saturation"
     elif is_comorbid:
@@ -177,7 +188,9 @@ def generate_cohort(
             if w in flares_by_wave:
                 fl = flares_by_wave[w]
                 per_wave.append(
-                    _flare_answer(w, fl, final_shifted, trues[w], comorbid.is_comorbid, params)
+                    _flare_answer(
+                        w, fl, final_shifted, trues[w], comorbid.is_comorbid, params, wave_dates[w]
+                    )
                 )
             elif w in comorbid.elevated_waves and w >= 1:
                 discordant = ("HAQ-II" not in final_shifted) and bool(final_shifted)

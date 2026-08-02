@@ -1,0 +1,97 @@
+{
+  "patients": [
+    {
+      "comorbidity_flags": [],
+      "disease_activity_state": "moderate",
+      "patient_id": "CASE-06",
+      "per_wave": [
+        {
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "flare_class": null,
+          "flare_driver": null,
+          "miss_reason": null,
+          "pro_domains_shifted": [],
+          "true_flare": false,
+          "wave_number": 0
+        },
+        {
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "flare_class": null,
+          "flare_driver": null,
+          "miss_reason": null,
+          "pro_domains_shifted": [],
+          "true_flare": false,
+          "wave_number": 1
+        },
+        {
+          "escalation_event": {
+            "candidate_classes": [],
+            "classification_confidence": "high",
+            "date": "2020-09-25",
+            "escalation_class": "gc_rescue_burst",
+            "route": "oral",
+            "type": "steroid_rescue"
+          },
+          "expected_M4_outcome": "should_miss_by_design",
+          "expected_UC_behavior": "stable",
+          "flare_class": "axiom_visible",
+          "flare_driver": "RA_primary",
+          "miss_reason": "temporal_linkage_missed",
+          "pro_domains_shifted": [
+            "HAQ-II",
+            "PainVAS",
+            "PatientGlobalVAS"
+          ],
+          "true_flare": true,
+          "wave_number": 2
+        },
+        {
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "flare_class": null,
+          "flare_driver": null,
+          "miss_reason": null,
+          "pro_domains_shifted": [],
+          "true_flare": false,
+          "wave_number": 3
+        },
+        {
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "flare_class": null,
+          "flare_driver": null,
+          "miss_reason": null,
+          "pro_domains_shifted": [],
+          "true_flare": false,
+          "wave_number": 4
+        },
+        {
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "flare_class": null,
+          "flare_driver": null,
+          "miss_reason": null,
+          "pro_domains_shifted": [],
+          "true_flare": false,
+          "wave_number": 5
+        }
+      ],
+      "phenotype_tier": "adversarial"
+    }
+  ],
+  "provenance": {
+    "field_spec_hash": "9c87cc347e1a24d638bd96ded6ab71d96a8207e15cd757cf172bfc37a081522c",
+    "generator_version": "0.1.0-dev",
+    "ground_truth_basis": "latent_true_values",
+    "parameter_spec_version": "1.1",
+    "seed": 910006,
+    "synthetic": true
+  }
+}

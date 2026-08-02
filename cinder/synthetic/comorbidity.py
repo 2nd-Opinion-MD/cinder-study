@@ -60,6 +60,8 @@ def apply_comorbidity_offset(
     baseline_pga_sd: float,
     assignment: ComorbidityAssignment,
     params: ComorbidityParams,
+    *,
+    elevated_waves: list[int] | None = None,
 ) -> None:
     """Add the comorbidity offset to Pain/PGA struct on a subset of waves (HAQ untouched).
 
@@ -72,8 +74,11 @@ def apply_comorbidity_offset(
     if not assignment.is_comorbid:
         return
     n = traj.pain_struct.shape[0]
-    # Each wave independently shows driven elevation with moderate probability.
-    elevated = [w for w in range(n) if rng.random() < 0.5]
+    if elevated_waves is not None:
+        elevated = [w for w in elevated_waves if 0 <= w < n]
+    else:
+        # Each wave independently shows driven elevation with moderate probability.
+        elevated = [w for w in range(n) if rng.random() < 0.5]
     pain_off = params.pain_offset_mean / baseline_pain_sd
     pga_off = params.pga_offset_mean / baseline_pga_sd
     for w in elevated:

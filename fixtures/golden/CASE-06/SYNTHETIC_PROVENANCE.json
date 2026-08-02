@@ -1,0 +1,13 @@
+{
+  "csv_files": [
+    "pro_long.csv",
+    "medications.csv",
+    "demographics.csv"
+  ],
+  "field_spec_hash": "9c87cc347e1a24d638bd96ded6ab71d96a8207e15cd757cf172bfc37a081522c",
+  "generator_version": "0.1.0-dev",
+  "parameter_spec_version": "1.1",
+  "schema_target": "ptv.2.1-indexed-v1-noarcs",
+  "synthetic": true,
+  "warning": "SYNTHETIC DATA - NOT REAL PATIENTS. Literature-parameterized cohort for detection-mechanics validation only. Never represent as real patient data."
+}

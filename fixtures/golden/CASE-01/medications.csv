@@ -1,0 +1,2 @@
+patient_id,drug_name,rxnorm,dose,dose_unit,route,start_date,stop_date
+CASE-01,sulfasalazine,9524,1000.0,mg,oral,2014-02-21,

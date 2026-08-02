@@ -1,0 +1,68 @@
+{
+  "provenance": {
+    "synthetic": true,
+    "generator_version": "0.1.0-dev",
+    "parameter_spec_version": "1.1",
+    "field_spec_hash": "9c87cc347e1a24d638bd96ded6ab71d96a8207e15cd757cf172bfc37a081522c",
+    "seed": 900002,
+    "ground_truth_basis": "latent_true_values"
+  },
+  "patients": [
+    {
+      "patient_id": "FWD-002",
+      "phenotype_tier": "clean",
+      "comorbidity_flags": [],
+      "disease_activity_state": "low",
+      "per_wave": [
+        {
+          "wave_number": 1,
+          "true_flare": false,
+          "flare_class": null,
+          "flare_driver": null,
+          "pro_domains_shifted": [],
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "miss_reason": null
+        },
+        {
+          "wave_number": 2,
+          "true_flare": true,
+          "flare_class": "axiom_invisible",
+          "flare_driver": "RA_primary",
+          "pro_domains_shifted": [
+            "HAQ-II",
+            "PainVAS",
+            "PatientGlobalVAS"
+          ],
+          "escalation_event": null,
+          "expected_M4_outcome": "axiom_invisible",
+          "expected_UC_behavior": "widen",
+          "miss_reason": null
+        },
+        {
+          "wave_number": 3,
+          "true_flare": false,
+          "flare_class": null,
+          "flare_driver": null,
+          "pro_domains_shifted": [],
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "miss_reason": null
+        },
+        {
+          "wave_number": 4,
+          "true_flare": false,
+          "flare_class": null,
+          "flare_driver": null,
+          "pro_domains_shifted": [],
+          "escalation_event": null,
+          "expected_M4_outcome": null,
+          "expected_UC_behavior": "stable",
+          "miss_reason": null
+        }
+      ]
+    }
+  ]
+}

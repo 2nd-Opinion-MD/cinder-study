@@ -70,16 +70,26 @@ def emit_maintenance_dmard(rng: np.random.Generator, dx_date: date) -> MedEvent:
 
 
 def emit_escalation(
-    rng: np.random.Generator, planted_class: str, flare_date: date
+    rng: np.random.Generator,
+    planted_class: str,
+    flare_date: date,
+    *,
+    window_offset_days: int | None = None,
 ) -> tuple[list[MedEvent], EscalationFact]:
     """Emit the med event(s) whose features drive M4.D to ``planted_class``.
 
     The escalation is placed within +/-90 d of ``flare_date`` (M4.C bidirectional window);
     we offset a few days before the PRO wave so the steroid/biologic precedes the captured
     shift (as in the seed exemplars).
+
+    When ``window_offset_days`` is set (F4 temporal-sampling cases), the anchor is placed
+    ``window_offset_days`` before ``flare_date`` — use a value >90 to miss the ±90d window.
     """
-    offset = int(rng.integers(3, 25))
-    start = flare_date - timedelta(days=offset)
+    if window_offset_days is not None:
+        start = flare_date - timedelta(days=int(window_offset_days))
+    else:
+        offset = int(rng.integers(3, 25))
+        start = flare_date - timedelta(days=offset)
 
     if planted_class == "gc_rescue_burst":
         dur = int(rng.integers(7, 22))  # <=21 d

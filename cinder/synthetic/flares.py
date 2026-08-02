@@ -27,7 +27,15 @@ from cinder.synthetic.params import GeneratorParams, StateBaseline
 from cinder.synthetic.records import MedEvent
 from cinder.synthetic.treatment import EscalationFact, emit_escalation
 
-__all__ = ["FlarePlan", "PlantedFlare", "domains_shifted", "plant_flares"]
+__all__ = [
+    "FlarePlan",
+    "PlantedFlare",
+    "domains_shifted",
+    "plant_flares",
+    "plant_invisible_flare_at",
+    "plant_slow_drift",
+    "plant_visible_flare_at",
+]
 
 #: Visible-flare escalation-class draw (rescue burst is the most common anchor).
 _VISIBLE_CLASS_WEIGHTS = {
@@ -206,3 +214,122 @@ def plant_flares(
             )
         )
     return FlarePlan(flares=flares, med_events=meds)
+
+
+def plant_invisible_flare_at(
+    rng: np.random.Generator,
+    traj: LatentTrajectory,
+    baseline: StateBaseline,
+    params: GeneratorParams,
+    w: int,
+    driver: str = "RA_primary",
+) -> PlantedFlare:
+    """Hand-dial an axiom_invisible flare at wave ``w`` (no escalation)."""
+    pain_delta = _draw_pain_magnitude(rng, params.mcid.pain_vas)
+    pga_delta = pain_delta * float(rng.uniform(0.9, 1.1))
+    haq_delta = pain_delta * _HAQ_PER_PAIN * float(rng.uniform(0.8, 1.3))
+    if w >= 1:
+        traj.pain_struct[w] = (
+            max(traj.pain_struct[w], traj.pain_struct[w - 1]) + pain_delta / baseline.pain_sd
+        )
+        traj.pga_struct[w] = (
+            max(traj.pga_struct[w], traj.pga_struct[w - 1]) + pga_delta / baseline.pga_sd
+        )
+        traj.haq_struct[w] = (
+            max(traj.haq_struct[w], traj.haq_struct[w - 1]) + haq_delta / baseline.haq_sd
+        )
+    else:
+        traj.pain_struct[w] += pain_delta / baseline.pain_sd
+        traj.pga_struct[w] += pga_delta / baseline.pga_sd
+        traj.haq_struct[w] += haq_delta / baseline.haq_sd
+    shifted = _shifted_at(traj, baseline, params, w) if w >= 1 else []
+    return PlantedFlare(
+        wave_number=w,
+        true_flare=True,
+        flare_class="axiom_invisible",
+        flare_driver=driver,
+        expected_M4_outcome="axiom_invisible",
+        expected_UC_behavior="widen",
+        pro_domains_shifted=shifted,
+    )
+
+
+def plant_visible_flare_at(
+    rng: np.random.Generator,
+    traj: LatentTrajectory,
+    baseline: StateBaseline,
+    params: GeneratorParams,
+    w: int,
+    wave_dates: list[date],
+    driver: str = "RA_primary",
+    *,
+    planted_class: str = "gc_rescue_burst",
+    window_offset_days: int | None = None,
+) -> tuple[PlantedFlare, list[MedEvent]]:
+    """Hand-dial an axiom_visible flare at wave ``w`` with a linked escalation."""
+    pain_delta = _draw_pain_magnitude(rng, params.mcid.pain_vas)
+    pga_delta = pain_delta * float(rng.uniform(0.9, 1.1))
+    haq_delta = pain_delta * _HAQ_PER_PAIN * float(rng.uniform(0.8, 1.3))
+    if w >= 1:
+        traj.pain_struct[w] = (
+            max(traj.pain_struct[w], traj.pain_struct[w - 1]) + pain_delta / baseline.pain_sd
+        )
+        traj.pga_struct[w] = (
+            max(traj.pga_struct[w], traj.pga_struct[w - 1]) + pga_delta / baseline.pga_sd
+        )
+        traj.haq_struct[w] = (
+            max(traj.haq_struct[w], traj.haq_struct[w - 1]) + haq_delta / baseline.haq_sd
+        )
+    else:
+        traj.pain_struct[w] += pain_delta / baseline.pain_sd
+        traj.pga_struct[w] += pga_delta / baseline.pga_sd
+        traj.haq_struct[w] += haq_delta / baseline.haq_sd
+    shifted = _shifted_at(traj, baseline, params, w) if w >= 1 else []
+    new_meds, fact = emit_escalation(
+        rng, planted_class, wave_dates[w], window_offset_days=window_offset_days
+    )
+    under_lookback = w < params.flares.min_lookback_wave
+    if under_lookback:
+        outcome, miss = "should_miss_by_design", "insufficient_lookback"
+    elif len(shifted) < 2:
+        outcome, miss = "should_miss_by_design", "pro_ceiling_saturation"
+    elif window_offset_days is not None and window_offset_days > 90:
+        outcome, miss = "should_miss_by_design", "temporal_linkage_missed"
+    else:
+        outcome, miss = "should_detect", None
+    uc = "widen" if fact.classification_confidence == "low" else "stable"
+    flare = PlantedFlare(
+        wave_number=w,
+        true_flare=True,
+        flare_class="axiom_visible",
+        flare_driver=driver,
+        expected_M4_outcome=outcome,
+        expected_UC_behavior=uc,
+        escalation=fact,
+        pro_domains_shifted=shifted,
+        miss_reason=miss,
+    )
+    return flare, new_meds
+
+
+def plant_slow_drift(
+    traj: LatentTrajectory,
+    baseline: StateBaseline,
+    params: GeneratorParams,
+) -> None:
+    """Monotonic sub-MCID per-wave increments (F4-CASE-08 baseline masking).
+
+    Each wave-to-wave delta on true PRO values stays below MCID, while cumulative
+    worsening from wave 0 to the final wave exceeds clinical significance.
+    """
+    n = traj.latent.shape[0]
+    if n < 2:
+        return
+    pain_step = params.mcid.pain_vas * 0.32
+    pga_step = params.mcid.pga_vas * 0.30
+    haq_step = params.mcid.haq_ii * 0.30
+    for w in range(1, n):
+        traj.latent[w] = traj.latent[w - 1] + 0.04
+        traj.pain_struct[w] = traj.pain_struct[w - 1] + pain_step / baseline.pain_sd
+        traj.pga_struct[w] = traj.pga_struct[w - 1] + pga_step / baseline.pga_sd
+        traj.haq_struct[w] = traj.haq_struct[w - 1] + haq_step / baseline.haq_sd
